@@ -42,8 +42,8 @@ import java.util.Set;
 import org.apache.log4j.Logger;
 
 /**
- * Implementation of an algorithm to upgrade a 4.x M&iacute;mir index to the 
- * format used by version 5.0, and 5.0 indexes to future versions.
+ * Implementation of an algorithm to upgrade a 4.x or 5.0 M&iacute;mir
+ * index to the format used by the current version.
  */
 public class IndexUpgrader {
   
@@ -315,12 +315,20 @@ public class IndexUpgrader {
             destinationFile.getAbsolutePath());
       }
     }
-    // create Bloom filter
+    // create Bloom filter, and regenerate the term map
     File termsFile = new File(headDir, outputFilePrefix + 
         DiskBasedIndex.TERMS_EXTENSION); // guaranteed to exist, as tested already
+    File termMapFile = new File(headDir, outputFilePrefix + 
+        DiskBasedIndex.TERMMAP_EXTENSION); // may not exist but that's OK
     File bloomFile = new File(headDir, outputFilePrefix + 
         DocumentalCluster.BLOOM_EXTENSION); // guaranteed to exist, as tested already
-    AtomicIndex.generateTermMap(termsFile, null, bloomFile);
+    if(termMapFile.exists()) {
+      if(!termMapFile.renameTo(new File(headDir, outputFilePrefix + 
+          DiskBasedIndex.TERMMAP_EXTENSION + ".old"))) {
+        logger.warn("Unable to back up old termmap for " + outputFilePrefix + "/" + headDir.getName());
+      }
+    }
+    AtomicIndex.generateTermMap(termsFile, termMapFile, bloomFile);
     
     if(direct) {
       // create the direct.terms file by copying the terms file from 
@@ -328,14 +336,24 @@ public class IndexUpgrader {
       File dest = new File(atomicIndexDir, AtomicIndex.DIRECT_TERMS_FILENAME);
       Files.copy(termsFile.toPath(), dest.toPath(), 
           StandardCopyOption.COPY_ATTRIBUTES);
-      // create direct Bloom filter
+      // create direct Bloom filter and regenerate term map
       File dirTermsFile = new File(headDir, outputFilePrefix + 
           AtomicIndex.DIRECT_INDEX_NAME_SUFFIX + 
           DiskBasedIndex.TERMS_EXTENSION); // guaranteed to exist, as tested already
+      File dirTermMapFile = new File(headDir, outputFilePrefix + 
+          AtomicIndex.DIRECT_INDEX_NAME_SUFFIX +
+          DiskBasedIndex.TERMMAP_EXTENSION); // may not exist but that's OK
       File dirBloomFile = new File(headDir, outputFilePrefix + 
           AtomicIndex.DIRECT_INDEX_NAME_SUFFIX +
           DocumentalCluster.BLOOM_EXTENSION); // guaranteed to exist, as tested already
-      AtomicIndex.generateTermMap(dirTermsFile, null, dirBloomFile);
+      if(dirTermMapFile.exists()) {
+        if(!dirTermMapFile.renameTo(new File(headDir, outputFilePrefix + 
+            AtomicIndex.DIRECT_INDEX_NAME_SUFFIX +
+            DiskBasedIndex.TERMMAP_EXTENSION + ".old"))) {
+          logger.warn("Unable to back up old direct termmap for " + outputFilePrefix + "/" + headDir.getName());
+        }
+      }
+      AtomicIndex.generateTermMap(dirTermsFile, dirTermMapFile, dirBloomFile);
     }
     
     // move the DB files
