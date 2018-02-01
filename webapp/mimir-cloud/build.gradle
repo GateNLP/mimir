@@ -23,6 +23,7 @@ apply plugin:"org.grails.grails-gsp"
 repositories {
     mavenLocal()
     maven { url "https://repo.grails.org/grails/core" }
+    maven { url "http://repo.gate.ac.uk/content/groups/public" }
 }
 
 grails {
