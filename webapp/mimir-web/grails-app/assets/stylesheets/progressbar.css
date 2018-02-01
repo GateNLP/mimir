@@ -1,0 +1,13 @@
+/* progress bar container */
+.progressbar{
+        border:1px solid black;
+        position:relative;
+        color:black; 
+}
+/* color bar */
+.progressbar span.progress{
+        position:absolute;
+        height:100%;
+        overflow:hidden;
+        background-color:#006193;
+}

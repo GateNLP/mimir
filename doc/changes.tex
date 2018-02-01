@@ -1,0 +1,210 @@
+This appendix details the main changes in each \Mimir\ release.
+
+\section{Version 5.4 (February 2017)}
+\begin{itemize}
+\item Now depends on GATE Embedded 8.4.
+\item A few critical bug fixes:
+  \begin{itemize}
+  \item Fixed a bug that prevented fetching of results when querying a remote
+    index through the XML search API
+  \item Set the proper query tokeniser and executor when creating a brand new
+    index from an index template -- previously these were only being set for
+    existing indexes opened from disk.
+  \end{itemize}
+\item Robustness improvements to make it more likely that an index which was
+  not closed properly (e.g. if \Mimir\ was killed due to low memory conditions)
+  will be recoverable.  There were previously a couple of critical points where
+  a crash would leave the index in a state where it could not be recovered even
+  with the use of the repair tool.
+\end{itemize}
+
+\section{Version 5.3 (January 2017)}
+\begin{itemize}
+\item Now depends on GATE Embedded 8.3.
+\item Added a tool to repair failed indexes, see section~\ref{sec:tools:repair}
+  for details.
+\item Added the ability to completely ignore annotations that have none of the
+  features configured in the index template.  This is more useful for
+  document-mode helpers rather than normal annotation-mode ones, see
+  section~\ref{sec:plugins:db} for an explanation.
+\end{itemize}
+
+\section{Version 5.2 (June 2016)}
+\begin{itemize}
+\item Now depends on GATE Embedded 8.2.
+\item The Grails plugin and \verb!mimir-cloud! application have been upgraded
+  to Grails 2.5.4 for better compatibility with Java 8.  Note that the plugin
+  and app will \emph{not} work with Grails 3.
+\item The query language can now handle non-ASCII characters in unquoted
+  strings.
+\item The \Mimir{} indexing PR is now much more efficient, able to send more
+  than one document in each HTTP call.
+\end{itemize}
+
+\section{Version 5.1 (June 2015)}
+\begin{itemize}
+\item \Mimir{} 5.1 depends on GATE Embedded 8.1.
+\item Bug fixes in various corner cases, in particular for very sparse semantic
+  annotations (where annotations of a particular type are found in relatively
+  few documents).
+\item Robustness improvements in \verb!mimir-client! indexing code.
+\item The SPARQL semantic annotation helper can now send queries to the SPARQL
+  endpoint using POST requests instead of GET, and now works correctly with
+  endpoints that require HTTP basic authentication.
+\end{itemize}
+
+\section{Version 5.0.1 (October 2014)}
+Two critical fixes:
+\begin{itemize}
+  \item Deletion of documents now works correctly, it had been broken in
+  version 5.0
+  \item Fixed clustering logic for multi-batch indexes.
+\end{itemize}
+
+\section{Version 5.0 (February 2014)}
+\begin{itemize}
+  \item \Mimir{} indexes are now updateable: new documents can be submitted for
+  indexing at any time.
+  \item \Mimir{} indexes are now live: they can index new documents and serve
+  queries at the same time. Manually {\em closing} indexes before they become
+  searcheable is no longer required.
+  \item The {\em mimir-demo} example web application has been removed.
+  \item The {\em mimir-cloud} has been modified to make it more suitable as a
+  generic example web application.
+  \item The sesame \Mimir{} plugin has been removed. For standard annotation
+  indexing we recommend using the db-h2 plugin. For handling formal semantics,
+  we recommend using the SPARQL plugin.
+  \item New query operator: {\bf MINUS} (also `-') performs the set minus
+  operation on result sets (see Section~\ref{sec:minus-query}).  
+  \item \Mimir{} now supports the construction of direct indexes (see
+  Section~\ref{sec:direct-indexes}). Direct indexes are used to support a new
+  family of queries, that use document ID as query terms, and which return terms
+  as results. Currently these are only available as a Java API, and can be found
+  in the {\tt gate.mimir.search.terms} package.
+  \item Semantic annotation helpers are now capable of 'describing' a matched
+  mention. The S-A-H implementations included in the main distribution provide
+  default implementations for this functionality, which can be replaced by
+  pluggin-in alternative versions.
+  \item The on-disk format for \Mimir{} indexes has changed. This was required
+  in order to support live indexing  and searching.
+  \item \Mimir{} has been upgraded to use MG4J version 5.2.1. Newly created
+  indexes will now be semi-succint, which is the highest performance
+  implementation.
+  \item \Mimir{} now uses Grails 2.2.3 and GWT 2.6.0 to build the mimir-cloud
+  web application.
+  \item Bugfix: you can now use a string on the right hand side of a \verb!<!,
+  \verb!>!, \verb!<=! and \verb!>=! in annotation queries. This was always
+  documented, but did not work before.
+  \item Many other bugfixes.
+\end{itemize}
+\section{Version 4.1.3 (September 2012)}
+\begin{itemize}
+  \item Bug fix in ranking query runner (used to search local indexes): a 
+  document ID was used instead of a document rank when requesting metadata 
+  fields.
+\end{itemize}
+\section{Version 4.1.2 (August 2012)}
+\begin{itemize}
+  \item Bug fix to void null pointer exceptions when the API is used to access
+  query results in a federated index without first checking the number of
+  available documents. Calling methods with an invalid {\tt rank} parameter will
+  now cause an index out of bounds exception.
+\end{itemize}
+\section{Version 4.1.1 (May 2012)}
+\begin{itemize}
+\item It is now possible to specify an index ID for a newly created/imported
+  local, remote or federated index, rather than having to create the index with
+  a random UUID and then change the ID later.
+%TODO fix up the screenshots to match this  
+\item Bugfix: stopped the web search UI from showing `{\tt null}' for context
+  tokens outside of the document, when a hit result occurs close to the end of
+  the document.
+\item Bugfix: the annotation type needed to be specified twice in the index
+  template when using the SPQARQL plugin.
+\item Bugfix: the web search UI was not updating correctly when a query
+  completed without matching any results.   
+\end{itemize}
+
+\section{Version 4.1 (May 2012)}
+\begin{itemize}
+\item A bugfix was applied to avoid leaking threads and memory in the new
+  ranking query runner implementation (the class {\tt gate.mimir.search.RankingQueryRunnerImpl}).
+\item \Mimir{} now uses the mg4j-big variant of the MG4J library. This uses
+  64 bit integers (Java longs) for document identifiers, and allows for larger
+  indexes to be created.
+\item The dependency to MG4J and related libraries is now managed through the
+  maven-central repository.
+\end{itemize}
+
+\section{Version 4.0 (February 2012)}
+\begin{itemize}
+  \item Changed the results presentation to be document-centric, as opposed to
+  hit-centric.
+  \item Overhauled the query API (in all modalities: Java local, Java remote,
+  and XML remote) to work in document centric mode and to remove the main pain
+  points identified.
+  \item Simplified all the query APIs by making them almost completely
+  synchronous.
+  \item Added support for ranking the results (see
+  Sections~\ref{sec:search:rank}  and \ref{sec:extend:scorers}).
+  \item New implementations for all the query runners (used when searching
+  local, remote and federated indexes).
+  \item Replaced the old GWT based UI with a new implementation (see
+  Section~\ref{sec:search:gus}).
+  \item Added the mimir-cloud web application to the source tree (see
+  Section~\ref{sec:mimir-cloud}).
+\end{itemize}
+
+\section{Version 3.4.0 (November 2011)}
+
+\begin{itemize}
+\item Added support for indexing document metadata, i.e. features (see
+Section~\ref{sec:indexing:templates}).
+\item \Mimir{} Grails Plugin: moved some configuration options from the external
+file to a database field, so that it can now be changed using the admin web UI.
+\item API: simplified the construction of all default Semantic Annotation
+Helpers. They all get a single no-argument constructor, and set of setter
+method for editing the various properties (Java Bean style). The Groovy
+interface does not change, as Groovy will automatically convert a constructor
+call that takes a Map to a call for the no-argument constructor, followed by all
+the required setPropertyXYZ calls.
+\item Completely removed the (previously deprecated) {\tt ordi} plugin, as it
+relies on software that is no longer supported by the original authors.
+\item Removed the {\tt mimir-demo} example application from the source tree. It
+can now be automatically generated using an Ant call (see 
+Section~\ref{sec:building}).
+\item Licence changed to LGPL.
+ 
+\end{itemize}
+
+\section{Version 3.3.0 (October 2011)}
+
+\begin{itemize}
+\item Added support for marking documents as ``deleted'' (see
+section~\ref{sec:admin:takedown}).
+
+\item Major changes to the format of the Index Template Groovy DSL (see
+section~\ref{sec:indexing:templates}).  The old format provided by \Mimir\
+3.2.0 is still supported for existing semantic annotation helper types, but
+new helper types in future may not be supported in the old style DSL.
+
+\item Added the {\em SPARQL} semantic annotation helper (see
+section~\ref{sec:plugins:sparql}).
+
+\item Updated versions of a number of libraries (H2 database to 1.3.160, OWLIM
+to 3.5, MG4J to 4.0, fastutil to 6.4, dsiutils to 2.0).
+
+\item The \verb|ordi| semantic annotation helper plugin is now deprecated.  Use
+the \verb|sesame| plugin instead, which supports the same on-disk format for
+its annotation storage but uses a different library to access it.
+
+\item Fixed various bugs and memory leaks (see subversion logs for full
+details).
+
+\end{itemize}
+
+\section{Version 3.2.0 (May 2011)}
+
+First public release of \Mimir, under an AGPL licence.
+
+% vim:ft=tex:

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>uk.ac.gate.mimir</groupId>
+  <artifactId>mimir-parent</artifactId>
+  <version>5.6-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <url>http://gate.ac.uk/mimir</url>
+
+  <name>GATE Mímir</name>
+
+  <description>
+  GATE Mímir is a Multiparadigm Information Management Index and Repository,
+  a tool for indexing data from GATE documents to support fast and flexible
+  searching based on the text, annotations, and semantic metadata.
+  </description>
+
+  <organization>
+    <name>GATE</name>
+    <url>http://gate.ac.uk</url>
+  </organization>
+
+  <developers>
+    <developer>
+      <id>gate-team</id>
+      <name>GATE Team</name>
+      <email>gate-developers@lists.sourceforge.net</email>
+    </developer>
+  </developers>
+
+  <licenses>
+    <license>
+      <name>GNU Lesser General Public License (LGPL), Version 3</name>
+      <url>http://www.gnu.org/licenses/lgpl.html</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <mailingLists>
+    <mailingList>
+      <name>GATE Users</name>
+      <post>gate-users@lists.sourceforge.net</post>
+      <archive>http://news.gmane.org/gmane.comp.ai.gate.general</archive>
+    </mailingList>
+  </mailingLists>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>1.8</maven.compiler.target>
+  </properties>
+
+  <modules>
+    <module>mimir-core</module>
+    <module>mimir-connector</module>
+    <module>mimir-client</module>
+    <module>mimir-indexing-plugin</module>
+    <module>plugins/db-h2</module>
+    <module>plugins/sparql</module>
+    <module>plugins/measurements</module>
+  </modules>
+
+  <distributionManagement>
+    <snapshotRepository>
+      <id>gate.snapshots</id>
+      <name>GATE Snapshots Repository</name>
+      <url>https://repo.gate.ac.uk/content/repositories/snapshots</url>
+      <layout>default</layout>
+    </snapshotRepository>
+  </distributionManagement>
+
+</project>

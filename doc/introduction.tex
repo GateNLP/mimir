@@ -1,0 +1,165 @@
+\Mimir\ is a multi-paradigm information management index and repository which
+can be used to index and search over text, annotations, semantic schemas
+(ontologies), and semantic meta-data (instance data). It allows queries that
+arbitrarily mix full-text, structural, linguistic and semantic queries and that
+can scale to gigabytes of text.
+
+A typical semantic annotation project deals with large quantities of data of
+different kinds. \Mimir\ provides a framework for implementing indexing and
+search functionality across all these data types, listed below in the order of
+increasing information density:
+
+{\bf Text}\\
+All documents have a textual content. Support for full text search represents
+the most basic indexing functionality and it is required in most (if not all)
+cases.  Even when semantic annotation is used to abstract away from the
+actual textual data, the original content still needs to be accessible so
+that it can be used to provide textual query fragments in the case of more
+complex conceptual queries.
+
+\Mimir\ uses inverted indexes\footnote{{\em Inverted Indexes} are data
+structures traditionally used in Information Retrieval to support indexing of
+text.} for indexing the document content (including additional linguistic
+information, such as part-of-speech or morphological roots), and for
+associating instance of annotations with the position in the input text where
+they occur. The inverted index implementation used by \Mimir\ is based on
+MG4J\footnote{\url{http://mg4j.dsi.unimi.it/}}.
+
+{\bf Annotations}\\
+The first step in abstracting away from the plain text content is the
+production of {\em annotations}. Annotations are meta-data associated to text
+snippets in the documents. \Mimir's view of annotations is based on that of
+GATE, with each annotation described by
+\begin{itemize}
+  \item the document it belongs to;
+  \item the start and end offset of the referred text snippet;
+  \item the annotation type;
+  \item an arbitrary set of \verb!<!feature,value\verb!>! pairs.
+\end{itemize}
+
+An annotation index supports a more generic search paradigm. Depending on the
+type of annotations available, the user can search across different dimensions.
+If, for example, the documents are annotated with occurrences of {\tt Person,
+Location, Organization} entities, then searches like {\tt \{Person\}, CEO of
+\{Organization\}, based in \{Location\}} become possible.  Storage of
+annotation data in \Mimir\ indexes is handled by plugins, \Mimir\ ships with
+two storage plugins by default, one storing annotation data in a relational
+database and the other in a Knowledge Base to support richer semantic querying.
+
+ANNIC (ANNotations In
+Context)\footnote{See \url{http://gate.ac.uk/userguide/chap:annic}.} is a tool
+predating \Mimir\ that supports the indexing of annotations, and that has been
+used to inform the design of \Mimir.
+
+{\bf Knowledge Base Data}\\
+Knowledge Base (KB) Data  consists of an ontology populated with instances. The
+ontology represents the data schema and comprises a hierarchy of class types
+and a hierarchy of properties that are applicable between instances of classes.
+The instance data represents facts that are known to the systems and is
+typically at least partially derived from semantic annotation over documents.
+KB data is used to reach a higher level of abstraction over the information in
+the documents which enables conceptual queries such as ``find all mentions of
+{\tt Person}s who are employed by any organisation based in Yorkshire''.
+
+A KB that is pre-populated with appropriate world knowledge can perform other
+generalisations that are natural to humans users, such as being able to identify
+Vienna as a valid answer to queries relating to Austria, Europe or the Western
+Hemisphere.
+
+As mentioned above, \Mimir\ can make use of a Knowledge Base to store
+information relating to annotations. The links between annotations, the textual
+data, and the knowledge base information are created by the inclusion into the
+text indexes of a set specially-created URIs that are associated with
+annotation data. Furthermore, URIs of entities from the Knowledge Base can be
+stored as annotation features.
+
+Knowledge bases are typically represented as a collection of triples that are
+kept in highly-specialised and optimised triple stores, using standards such as
+RDF or one the versions of OWL\footnote{See
+\url{http://www.w3.org/RDF/} and \url{http://www.w3.org/TR/owl-features/}.}. The
+implementation used by \Mimir\ is based on ORDI and
+OWLIM\footnote{See
+\url{http://www.ontotext.com/ordi/} and \url{http://www.ontotext.com/owlim/}.}.
+
+\section{Core Concepts}
+
+\Mimir{} provides indexing infrastrucutre for annotated
+GATE\footnote{\url{http://gate.ac.uk}} documents. Users can start a \Mimir{}
+server, submit documents to it for indexing, and execute queries against the set
+of indexed documents. 
+
+A \Mimir{} index is a composite of multiple sub-indexes, which are defined in
+the {\em index template} that needs to be provided by the user when a new
+\Mimir{} index is created (see Section~\ref{sec:indexing:templates} for
+details).
+
+{\bf Token Indexes} are sub-indexes that store the information associated with 
+\verb!{Token}! annotations. These are provide a way to index the document
+content. \Mimir{} does not directly index the document text. Instead it uses the
+sequence of \verb!{Token}! annotation to construct a representation of the
+document text. This provides more flexibility: if the user chooses to index the
+{\tt string} feature of the tokens, that is equivalent to indexing the document
+text. Alternatively, the user could chose to pre-process their document with the
+GATE Morphological Analyser, and instead index the morphological roots of each
+token. This normalises the representation of words (by eliminating inflections)
+and allows different forms of the same word to be matched (e.g. {\em house} and
+{\em houses}). This is similar to stemming/lemmatising, a process traditionally
+employed in Information Retrieval, but it is more advanced and linguistically
+sophisticated, and allows matching e.g. {\em be}, {\em was}, {\em are} with
+each-other, which stemming would not be capable to.
+
+Beside allowing the user to choose which token feature should be indexed,
+\Mimir{} also allows multiple token features to be indexed in parallel
+sub-indexes. The user can actually choose to index {\bf both} the token string
+and morphological root. In that case, the feature mentioned first in the
+{\em index template} becomes the default token feature. To search on any of the
+other token features, queries need to specify which feature they want to target
+(see Section~\ref{sec:string-query} for details).
+
+{\bf Annotation Indexes} are the other type of \Mimir{} sub-index. They are used
+to index information about annotations on the document. Which annotations should
+be indexed is described in the {\em index template}.
+
+Both token and annotation indexes can be configured to also use {\bf direct
+indexes}. Direct can be used to perform searches for terms starting from
+documents, for eaxmple finding the most frequently occurring word (or
+annotation) in a set of documents. This functionality is only available from the
+Java API and cannot be directly accessed by the system users via the web
+interface. More details can be found in Section~\ref{sec:direct-indexes}.
+
+\section{\Mimir{} Lifecycle}
+
+In vesions prior to $5.0$, a \Mimir{} index would start its existence in {\em
+indexing} mode, when it would accept new documents for indexing. When all the
+documents had been indexed, the index would need to be {\em closed}, which would
+switch its operation mode to {\em searching}, and the index would then be able
+to answer queries. Once closed, and index could not accept any further documents
+for indexing. Starting with version $5.0$, a Mímir index is continually
+accepting documents to be indexed and can answer queries that address the
+currently indexed document set. From being sent to \Mimir{} for indexing to
+becoming avaialble for search, documents go through several stages, which we
+describe next.
+
+Documents submitted for indexing are initially accumulated in RAM, during
+which time they are not available for being searched. A {\em sync-to-disk}
+operation writes all the documents currently in RAM to disk, in the form of an
+{\em index batch}, after which the documents can be searched. Sync-to-disk
+operations happen automatically when too much document data has been accumulated
+in RAM, or after a given time interval has passed since the last sync.
+Alternatively, the user can also trigger a sync operation from index admin web
+interface.
+
+Every sync-to-disk operation causes a new index {\em batch} to be created.
+All the batches are merged into a index cluster which is then used to serve
+queries. If the number of clusters gets too large, it can harm efficiency or the
+system can run into problems due to too large a number of files being open. To
+avoid this, the index batches can be compacted into a single batch. \Mimir{}
+indexes will automatically do that once the number of batches exceeds a certain
+threshold (which can be modified via API calls).
+
+In order to keep its consistency, a \Mimir{} index {\bf must} be closed in an
+orderly fashion before the mimir server process is shut down. Shutting down the
+\Mimir{} server (e.g. the {\tt mimir-cloud} web application) will automatically
+close all currently open indexes. Users should never forcefully destroy the
+\Mimir{} server process, as that would not allow the close operations to be
+performed, which can lead to data loss, or it can corrupt existing indexes.

@@ -1,0 +1,80 @@
+This chapter documents additional tools that are provided with \Mimir\ for
+special use cases, but which are not required for general day-to-day operation.
+
+\section{Recovering a failed index}\label{sec:tools:repair}
+
+\Mimir\ indexes are ordinarily quite robust, but there are certain
+circumstances in which an index can become corrupted and marked as ``failed''
+in the \Mimir\ web UI.  Typically this only happens when the index has not been
+shut down cleanly, for example if an out-of-memory condition occurs during
+indexing.  The majority of these failures fall into two categories, either a
+crash during a ``sync to disk'' operation which leaves a corrupted batch on
+disk, or a crash after all batches have been saved but before the index has
+been completely closed, which leaves the document metadata zip files corrupted.
+In both of these cases the vast majority of the indexed data can usually be
+recovered using the index repair tool.  The last documents to be indexed will
+likely be lost -- exactly how many are lost depends on a number of factors
+including exactly when the failure occurred, the length of the
+\verb!timeBetweenBatches! setting in the index template, etc. -- but the tool
+attempts to minimise the number of lost documents as far as possible.
+
+The repair tool is a command line application which operates directly on the
+index files on disk.  In order to run the tool the index must not be ``open''
+and in use by a running \Mimir{}, so you must either shut down your running
+\Mimir\ application or delete the local index from the web UI (\emph{without}
+deleting the underlying index files from disk!).
+
+Before attempting the repair process it is {\bf very strongly recommended} to
+make a backup copy of the index files.  If the repair process itself fails
+(e.g. with an out of memory error) it can leave the index in a completely
+unrecoverable state, and you will have to restore from your backup, correct the
+problem (e.g. allocate more memory) and try again.
+
+The simplest way to run the repair tool is via the \verb!truncate-index.sh!
+bash script at \verb!WEB-INF/utils! inside the compiled \verb!mimir-cloud!  WAR
+file.
+
+\begin{verbatim}
+bash truncate-index.sh /path/to/the/index-12345.mimir
+\end{verbatim}
+
+The final parameter is the full path to the top-level directory of the index
+you want to repair.  If the repair is successful you should then be able to
+re-start your \Mimir\ application and/or re-import the fixed index using the
+``import an existing index'' option.
+
+See the comment block at the top of the script for full details of the
+available parameters.
+
+\subsection*{The recovery process in detail}
+
+The repair process consists of a number of phases.
+
+\begin{enumerate}
+\item Ensure the document metadata zip files are all complete, repairing the
+  last one if necessary
+\item Examine all the index batches and determine the latest point at which all
+  the sub-indexes successfully dumped a batch in sync.  This is referred to as
+  the ``last good batch''.  Delete any batches beyond this point.
+\item If the (repaired) zip files contain at least as many document as the good
+  batches, then simply truncate the zip collection to match the last good batch
+  and the repair process is complete.
+\item Otherwise, the zip files are the limiting factor, as the zip collection
+  ends in the middle of a ``good'' batch.  Determine which batch this is,
+  delete all the subsequent batches, then truncate what is now the last batch
+  to match the length of the zip collection.
+\end{enumerate}
+
+The final step can require a lot of memory if the last batch is large (e.g. a
+recently compacted \verb!head! batch), it may be necessary to allocate more
+memory to the repair process by editing the shell script.
+
+In the best case (all batches successfully synced to disk, just the zip
+collection failed to close) this will recover all but the last one or two
+documents.  The worst case is when the index failed during the very first sync
+to disk, in which case nothing will be recoverable, but in this case there
+should be no more than one hour or so of documents that need to be re-indexed.
+Most cases will fall somewhere between these extremes, and the number of
+documents lost depends on the \verb!timeBetweenBatches! configured in the index
+template.  A shorter time between batches means less potential for data loss
+but more work for the indexer.

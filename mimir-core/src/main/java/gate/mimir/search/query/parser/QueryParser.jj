@@ -1,0 +1,1255 @@
+options {
+  STATIC = false;
+  CACHE_TOKENS = true;
+  IGNORE_CASE = false;
+  DEBUG_PARSER = false;
+  DEBUG_TOKEN_MANAGER = false;
+  FORCE_LA_CHECK = false;
+  CHOICE_AMBIGUITY_CHECK = 2;
+  OTHER_AMBIGUITY_CHECK = 1;
+  DEBUG_LOOKAHEAD = false;
+  ERROR_REPORTING = true;
+  JAVA_UNICODE_ESCAPE = false;
+  UNICODE_INPUT = true;
+  USER_TOKEN_MANAGER = false;
+  USER_CHAR_STREAM = false;
+  BUILD_PARSER = true;
+  BUILD_TOKEN_MANAGER = true;
+  SANITY_CHECK = true;
+}
+
+PARSER_BEGIN(QueryParser)
+
+package gate.mimir.search.query.parser;
+  
+import gate.Annotation;
+import gate.Corpus;
+import gate.Document;
+import gate.Factory;
+import gate.Gate;
+import gate.LanguageAnalyser;
+import gate.creole.ANNIEConstants;
+import gate.creole.ExecutionException;
+import gate.creole.ResourceInstantiationException;
+import gate.util.OffsetComparator;
+
+import gate.mimir.search.query.QueryNode;
+import gate.mimir.search.query.SequenceQuery.Gap;
+import gate.mimir.ConstraintType;
+import gate.mimir.Constraint;
+
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+  
+/**
+ * QueryParser. Given a text query, this parser returns a QueryNode object
+ * that can be used for querying the Mimir index.
+ */
+public class QueryParser {
+
+  // keeping track of row and column for gap queries
+  // please note that this variable is updated only on certain occassions
+  int column;
+  int row;
+  boolean debug = false;
+
+  private static final OffsetComparator OFFSET_COMPARATOR = new OffsetComparator();
+
+  /**
+   * The GATE LanguageAnalyser used to tokenise plain term queries and quoted
+   * strings.  Typically this will just be a tokeniser PR but we allow any
+   * LanguageAnalyser so more complex processing can be injected if required.
+   * The only requirement is that the LA can take an un-annotated document and
+   * return one with {@link ANNIEConstants#TOKEN_ANNOTATION_TYPE} annotations
+   * in the default annotation set.
+   */
+  private LanguageAnalyser queryTokeniser;
+
+  /**
+   * Set the GATE LanguageAnalyser used to parse quoted strings in queries.
+   * This allows clients to override the default tokeniser if required, and
+   * should be called before the first use of {@link #parse}.
+   */
+  public void setQueryTokeniser(LanguageAnalyser tok) {
+    queryTokeniser = tok;
+  }
+
+  /**
+   * Default query tokeniser, used if no specific tokeniser has been passed to
+   * a particular parser instance.  Initialized lazily on first use.
+   */
+  private static LanguageAnalyser defaultQueryTokeniser;
+
+  public static final String DEFAULT_TOKENISER_CLASS_NAME =
+    "gate.creole.tokeniser.DefaultTokeniser";
+
+  /**
+   * Returns the default query tokeniser, initializing it if necessary.
+   */
+  private static synchronized LanguageAnalyser getDefaultQueryTokeniser() throws ParseException {
+    if(defaultQueryTokeniser == null) {
+      try {
+        defaultQueryTokeniser = (LanguageAnalyser)Factory.createResource(
+            DEFAULT_TOKENISER_CLASS_NAME);
+      }
+      catch(ResourceInstantiationException e) {
+        throw (ParseException)new ParseException("Couldn't create query tokeniser")
+          .initCause(e);
+      }
+    }
+
+    return defaultQueryTokeniser;
+  }
+
+  public static void main(String[] args) throws Exception {
+    String query = args[0];
+    Gate.init();
+    QueryNode node = QueryParser.parse(query);
+    System.out.println(query);
+    System.out.println(node.getClass().getName());
+  }
+
+  /**
+   * Parses the query and returns a top level QueryNode object.
+   * @param query the query to parse
+   * @return instance of the QueryNode
+   */
+  public static QueryNode parse(String query) throws ParseException {
+    return parse(query, getDefaultQueryTokeniser());
+  }
+
+  /**
+   * Parses the query and returns a top level QueryNode object.
+   * @param query the query to parse
+   * @param tokeniser the GATE {@link LanguageAnalyser} used to parse strings
+   *         in the query.
+   * @return instance of the QueryNode
+   */
+  public static QueryNode parse(String query, LanguageAnalyser tokeniser) throws ParseException {
+      // start parsing
+      QueryParser parser = new QueryParser(new StringReader(query));
+      parser.setQueryTokeniser(tokeniser);
+      Query queryInst = parser.start();
+      return parser.convert(queryInst, "");
+  }
+    
+  /**
+   * converts the given query object into an appropriate QueryNode.
+   * @param queryInst
+   * @return instance of QueryNode 
+   */
+  private QueryNode convert(Query queryInst, String space) 
+                                             throws ParseException {
+    // need to convert queryInst into appropriate query objects
+    // TermQuery, AnnotationQuery, GapQuery, InQuery, OverQuery, KleneQuery
+    // OrQuery, AndQuery, SequenceQuery
+    if(queryInst instanceof TermQuery) {
+      return toTermQuery((TermQuery)queryInst, space);
+    } else if(queryInst instanceof AnnotationQuery) {
+      return toAnnotationQuery((AnnotationQuery) queryInst, space);
+    } else if(queryInst instanceof GapQuery) {
+      throw new ParseException(
+           "Gap cannot be specified as a first or last element in the query");
+    } else if(queryInst instanceof InQuery) {
+      return toWithinQuery((InQuery)queryInst, space);
+    } else if(queryInst instanceof OverQuery) {
+      return toContainsQuery((OverQuery)queryInst, space);
+    } else if(queryInst instanceof KleneQuery) {
+      return toRepeatsQuery((KleneQuery)queryInst, space);
+    } else if(queryInst instanceof ORQuery) {
+      return toOrQuery((ORQuery)queryInst, space);
+    } else if(queryInst instanceof ANDQuery) {
+      return toAndQuery((ANDQuery)queryInst, space);
+    } else if(queryInst instanceof MinusQuery) {
+      return toMinusQuery((MinusQuery)queryInst, space);
+    } else if(queryInst instanceof SequenceQuery) {
+      return toSequenceQuery((SequenceQuery)queryInst, space);
+    }
+    else {
+      throw new ParseException("Invalid query type:" +
+                                 queryInst.getClass().getName());
+    }
+  }
+
+  /**
+   * Conversion of the TermQuery
+   * @param query
+   * @return
+   */
+  private QueryNode toTermQuery(TermQuery query, String space) {
+    if(debug) System.out.println(space + "Term="+query.index+":"+query.term);
+    return new gate.mimir.search.query.TermQuery(query.index, query.term);
+  }
+
+  /**
+   * Conversion of the AnnotationQuery
+   * @param query
+   * @return
+   */
+  private QueryNode toAnnotationQuery(AnnotationQuery query, String space) {
+    if(debug) System.out.println(space + "Annotation="+query.type);
+    List<Constraint> featureConstraints = new ArrayList<Constraint>();
+    for(FeatureValuePair fvp : query.pairs) {
+      Constraint c = null;
+      if(fvp.constraintType == FeatureValuePair.EQ) {
+        if(debug)
+          System.out.println("\t"+fvp.feature+"="+fvp.value);
+        c = new Constraint(ConstraintType.EQ, fvp.feature, fvp.value);
+      } else if(fvp.constraintType == FeatureValuePair.REGEX) {
+        if(fvp.value instanceof String[]) {
+          if(debug) {
+            String[] values = (String[]) fvp.value;
+            System.out.println("\t"+fvp.feature+".REGEX("+values[0]+"," + 
+                               values[1]+")");
+          } 
+        } else {
+          if(debug) System.out.println("\t"+fvp.feature+".REGEX("
+                                        +fvp.value+")");
+        }
+        c = new Constraint(ConstraintType.REGEX, fvp.feature, fvp.value);
+      } else if(fvp.constraintType == FeatureValuePair.LT) {
+        if(debug)
+          System.out.println("\t"+fvp.feature+"<"+fvp.value);
+        c = new Constraint(ConstraintType.LT, fvp.feature, fvp.value);
+      } else if(fvp.constraintType == FeatureValuePair.GT) {
+        if(debug)
+          System.out.println("\t"+fvp.feature+">"+fvp.value);
+        c = new Constraint(ConstraintType.GT, fvp.feature, fvp.value);
+      } else if(fvp.constraintType == FeatureValuePair.LE) {
+        if(debug)
+          System.out.println("\t"+fvp.feature+"<="+fvp.value);
+        c = new Constraint(ConstraintType.LE, fvp.feature, fvp.value);
+      } else {
+        if(debug)
+          System.out.println("\t"+fvp.feature+">="+fvp.value);
+        c = new Constraint(ConstraintType.GE, fvp.feature, fvp.value);
+      }
+      featureConstraints.add(c);
+    }
+    return new gate.mimir.search.query.AnnotationQuery(query.type, 
+                                                          featureConstraints);
+  }
+
+  /**
+   * Conversion of the InQuery into WithinQuery
+   * @param query
+   * @return
+   * @throws ParseException
+   */
+  private QueryNode toWithinQuery(InQuery query, String space) 
+                                                 throws ParseException {
+    if(debug) System.out.println(space + "WithinQuery:");
+    QueryNode targetQuery = convert(query.innerQuery, space + " ");
+    QueryNode surroundingQuery = convert(query.outerQuery, space + " ");
+    return new gate.mimir.search.query.WithinQuery(targetQuery,
+                                                    surroundingQuery);
+  }
+
+  /**
+   * Conversion of the OverQuery into ContainsQuery
+   * @param query
+   * @return
+   * @throws ParseException
+   */
+  private QueryNode toContainsQuery(OverQuery query, String space) 
+                                                     throws ParseException {
+    if(debug) System.out.println(space + "ContainsQuery");
+    QueryNode targetQuery = convert(query.overQuery, space + " ");
+    QueryNode nestedQuery = convert(query.innerQuery, space + " ");
+    return new gate.mimir.search.query.ContainsQuery(targetQuery, nestedQuery);
+  }
+
+  /**
+   * Conversion of the KleneQuery into RepeatsQuery
+   * @param query
+   * @return
+   * @throws ParseException
+   */
+  private QueryNode toRepeatsQuery(KleneQuery query, String space) 
+                                                     throws ParseException {
+    if(debug) System.out.println(space + "Repeats:"+query.min+".."+query.max);
+    QueryNode queryNode = convert(query.query, space + " ");
+    return new gate.mimir.search.query.RepeatsQuery(queryNode, query.min,
+                                                                   query.max);
+  }
+
+  /**
+   * Conversion of the ORQuery
+   * @param query
+   * @return
+   * @throws ParseException
+   */
+  private QueryNode toOrQuery(ORQuery query, String space) 
+                                             throws ParseException {
+    int totalQueries = query.queriesToOr.size();
+    if(debug) System.out.println(space + "OrQuery:"+totalQueries);
+    QueryNode [] orQueries = new QueryNode[totalQueries];
+    for(int i=0;i<totalQueries;i++) {
+      orQueries[i] = convert(query.queriesToOr.get(i), space + " ");
+    }
+    return new gate.mimir.search.query.OrQuery(orQueries);
+  }
+
+  /**
+   * Conversion of the ANDQuery
+   * @param query
+   * @return
+   * @throws ParseException
+   */
+  private QueryNode toAndQuery(ANDQuery query, String space) 
+                                             throws ParseException {
+    int totalQueries = query.queriesToAnd.size();
+    if(debug) System.out.println(space + "AndQuery:"+totalQueries);
+    QueryNode [] andQueries = new QueryNode[totalQueries];
+    for(int i=0;i<totalQueries;i++) {
+      andQueries[i] = convert(query.queriesToAnd.get(i), space + " ");
+    }
+    return new gate.mimir.search.query.AndQuery(andQueries);
+  }
+
+  /**
+   * Conversion of the MinusQuery
+   * @param query
+   * @return
+   * @throws ParseException
+   */
+  private QueryNode toMinusQuery(MinusQuery query, String space) 
+                                             throws ParseException {
+    if(debug) System.out.println(space + "MinusQuery:");
+    QueryNode leftQuery = convert(query.leftQuery, space + " ");
+    QueryNode rightQuery = convert(query.rightQuery, space + " ");
+    return new gate.mimir.search.query.MinusQuery(leftQuery,
+                                                    rightQuery);
+  }
+
+  /**
+   * Conversion of the SequenceQuery
+   * @param query
+   * @return
+   * @throws ParseException
+   */
+  private QueryNode toSequenceQuery(SequenceQuery query, String space) 
+                                                         throws ParseException {
+    if(query.queriesInOrder.size() > 1) {
+      if(debug) System.out.println(space + 
+                                 "SequenceQuery:"+query.queriesInOrder.size());
+    }
+    List<QueryNode> queries = new ArrayList<QueryNode>();
+    List<Gap> queryGaps = new ArrayList<Gap>();
+
+    boolean canBeGapQuery = false;
+
+    for(int i=0;i<query.queriesInOrder.size();i++) {
+      Query q = query.queriesInOrder.get(i);
+      if(q instanceof GapQuery) {
+        if(!canBeGapQuery) {
+          throw new ParseException("Improper use of the Gap");
+        }
+
+        if(i == query.queriesInOrder.size()-1) {
+          throw new ParseException(
+                         "Last element in the SequenceQuery cannot be gap");
+        }
+
+        GapQuery gq = (GapQuery) q;
+        Gap gap =
+           gate.mimir.search.query.SequenceQuery.getGap(gq.minGap, gq.maxGap);
+        if(debug) System.out.println(space + 
+                                     " GapQuery:"+gq.minGap+".."+gq.maxGap);
+        queryGaps.add(gap);
+        // next element cannot be a gap query
+        canBeGapQuery = false;
+        continue;
+      }
+
+      // expecting a gap?
+      if(canBeGapQuery) {
+        // yes but this is not a gap, so add an empty gap
+        queryGaps.add(gate.mimir.search.query.SequenceQuery.getGap(0, 0));
+      }
+      queries.add(convert(q, query.queriesInOrder.size() > 1 ? space + " " : space));
+      canBeGapQuery = true;
+    }
+    
+    if(queries.size() == 1) {
+      return queries.get(0);
+    } else {
+      return new gate.mimir.search.query.SequenceQuery(
+            queryGaps.toArray(new Gap[0]), queries.toArray(new QueryNode[0]));
+    }
+  }
+
+  /** converts escape sequences into normal sequences */
+  public String unescape(String s) {
+    return s.replaceAll("\\\"IN\\\"","IN")
+                      .replaceAll("\\\"OVER\\\"","OVER")
+                      .replaceAll("\\\"AND\\\"","AND")
+                      .replaceAll("\\\"OR\\\"","OR")
+                      .replaceAll("\\\"REGEX\\\"","REGEX")                      
+                      .replaceAll("\\\\\\{","{").replaceAll("\\\\\\}","}")
+                      .replaceAll("\\\\\\<","<").replaceAll("\\\\\\>",">")
+                      .replaceAll("\\\\\\-","-")
+                      .replaceAll("\\\\\\[","[").replaceAll("\\\\\\]","]")
+                      .replaceAll("\\\\\\(","(").replaceAll("\\\\\\)",")")
+                      .replaceAll("\\\\\\:",":").replaceAll("\\\\\\+","+")
+                      .replaceAll("\\\\\\|","|").replaceAll("\\\\\\?","?")
+                      .replaceAll("\\\\\\&","&")
+                      .replaceAll("\\\\\\.",".").replaceAll("\\\\\"","\"")
+                      .replaceAll("\\\\\\=","=").replaceAll("(\\\\){2}","\\\\");
+  }
+ 
+  // parse string and obtain the appropriate query object
+  public Query parseString(String s) throws ParseException {
+    Document document = null;
+    Corpus corpus = null;
+    synchronized(queryTokeniser) {
+      try {
+        document = Factory.newDocument(s);
+        corpus = Factory.newCorpus("QueryParser corpus");
+        corpus.add(document);
+        queryTokeniser.setCorpus(corpus);
+        queryTokeniser.setDocument(document);
+        queryTokeniser.execute();
+
+        List<Annotation> tokens = new ArrayList<Annotation>(
+            document.getAnnotations().get(ANNIEConstants.TOKEN_ANNOTATION_TYPE));
+        Collections.sort(tokens, OFFSET_COMPARATOR);
+        
+        if(tokens.size() > 1) {
+          SequenceQuery sq = new SequenceQuery();
+          for(Annotation term : tokens) {
+            TermQuery tq = new TermQuery();
+            tq.term = (String)term.getFeatures()
+                        .get(ANNIEConstants.TOKEN_STRING_FEATURE_NAME);
+            tq.index = null;  // as valy suggested using null instead of "string";
+            sq.add(tq);
+          }
+          return sq;
+        }
+        else {
+          TermQuery tq = new TermQuery();
+          tq.term = (String)tokens.get(0).getFeatures()
+                      .get(ANNIEConstants.TOKEN_STRING_FEATURE_NAME);
+          tq.index = null;  // as valy suggested using null instead of "string";
+          return tq;
+        }
+      }
+      catch(ResourceInstantiationException e) {
+        throw (ParseException)new ParseException(
+            "Error creating GATE document for string parser").initCause(e);
+      }
+      catch(ExecutionException e) {
+        throw (ParseException)new ParseException(
+            "Error tokenising string").initCause(e);
+      }
+      finally {
+        queryTokeniser.setCorpus(null);
+        queryTokeniser.setDocument(null);
+        if(corpus != null) {
+          corpus.clear();
+          Factory.deleteResource(corpus);
+        }
+        if(document != null) {
+          Factory.deleteResource(document);
+        }
+      }
+    }
+  }
+}
+PARSER_END(QueryParser)
+
+
+///// lexical analysis
+SKIP:{"\n" | "\r" | "\r\n" | "\t" | " "}
+
+
+//starts a string
+MORE:
+{
+  "\"" : IN_STRING
+}
+
+//reads the contents of the string
+<IN_STRING> MORE :
+{
+    "\\n"  { image.setLength(image.length() - 2); image.append("\n"); }
+  |
+    "\\r"  { image.setLength(image.length() - 2); image.append("\r"); }
+  |
+    "\\t"  { image.setLength(image.length() - 2); image.append("\t"); }
+  |
+    "\\b"  { image.setLength(image.length() - 2); image.append("\b"); }
+  |
+    "\\f"  { image.setLength(image.length() - 2); image.append("\f"); }
+  |
+    "\\\""  { image.setLength(image.length() - 2); image.append("\""); }
+  |
+    "\\\'"  { image.setLength(image.length() - 2); image.append("\'"); }
+  |
+    "\\\\"  { image.setLength(image.length() - 2); image.append("\\"); }
+  |
+    <"\\u" (["0"-"9","A"-"F","a"-"f"]) (["0"-"9","A"-"F","a"-"f"])
+           (["0"-"9","A"-"F","a"-"f"]) (["0"-"9","A"-"F","a"-"f"])>
+           {
+             String digits = image.substring(image.length() - 4, image.length());
+             image.setLength(image.length() - 6);
+             image.append((char)Integer.parseInt(digits, 16));
+           }
+  |
+    < ~["\"", "\\"] >  // Disallow backslashes that weren't caught by previous rules
+                       // Note that here you don't need any action.
+}
+
+//finishes the string
+<IN_STRING> TOKEN :
+{
+  <string : "\"" >
+  {
+    // image.setLength(image.length() - 1);
+     matchedToken.image = image.toString();
+  } : DEFAULT
+}
+
+// number is used after the plus sign in the klene operator
+// where 0 is not permitted
+TOKEN:{<number: (["0"-"9"])+>}
+
+// escpae sequences
+TOKEN:{<#escape: "\\{" | "\\}" | "\\(" | "\\)" | "\\:" | "\\+" | "\\|" | "\\?" |
+                 "\\\\" | "\\." | "\"IN\"" | "\"OVER\"" | "\\\"" | "\\=" | 
+                 "\\[" | "\\]" | "\\&" | "\"OR\"" | "\"AND\"" | "\\>" | "\\<" 
+                 | "\"REGEX\"" | "\\-">}
+
+// special characters
+TOKEN:{<#special: "!" | "£" | "$" | "€" | "¢" | "%" | "^" | "*" | "_" | "@" | 
+                  "'" | "~" | "#" | "`" | "¬">}
+
+// reserved characters
+TOKEN:{<le: "<=">}
+TOKEN:{<ge: ">=">}
+TOKEN:{<lt: "<">}
+TOKEN:{<gt: ">">}
+TOKEN:{<leftbrace: "{">}
+TOKEN:{<rightbrace: "}">}
+TOKEN:{<leftbracket: "(">}
+TOKEN:{<rightbracket: ")">}
+TOKEN:{<period: ".">}
+TOKEN:{<equals: "=">}
+TOKEN:{<colon: ":">}
+TOKEN:{<comma: ",">}
+TOKEN:{<or: "|" | "OR">}
+TOKEN:{<and: "&" | "AND">}
+// don't use "-" for minus because it clashes with negative numbers
+TOKEN:{<minus: "MINUS">}
+TOKEN:{<plus: "+">}
+TOKEN:{<question: "?">}
+TOKEN:{<in: "IN">}
+TOKEN:{<hyphen: "-">}
+TOKEN:{<over: "OVER">}
+TOKEN:{<leftsquarebracket: "[">}
+TOKEN:{<rightsquarebracket: "]">}
+TOKEN:{<regex: "REGEX">}
+
+// token could be
+// special characters and escape sequences 
+TOKEN:{
+  <tok: (
+      ((  "\\[" | "\\]" | "\\(" 
+        | "\\)" | "\\:" | "\\+" | "\\&" | "\\|" | "\\?" | "\\\\" | "\\." 
+        | "\"AND\"" | "\"OR\"" | "\"IN\"" | "\"OVER\"" | "\\\"" | "\\=" 
+        | "\\{" | "\\}" | "\\<" | "\\>" | "\\," | "\"REGEX\"" | <special>)+)
+        // Java identifier
+        | (<LETTER> (<LETTER>|<DIGIT>)* )
+  )>
+|
+  < #LETTER:
+      [
+       "\u0024",
+       "\u0041"-"\u005a",
+       "\u005f",
+       "\u0061"-"\u007a",
+       "\u00c0"-"\u00d6",
+       "\u00d8"-"\u00f6",
+       "\u00f8"-"\u00ff",
+       "\u0100"-"\u1fff",
+       "\u3040"-"\u318f",
+       "\u3300"-"\u337f",
+       "\u3400"-"\u3d2d",
+       "\u4e00"-"\u9fff",
+       "\uf900"-"\ufaff"
+      ]
+  >
+|
+  < #DIGIT:
+      [
+       "\u0030"-"\u0039",
+       "\u0660"-"\u0669",
+       "\u06f0"-"\u06f9",
+       "\u0966"-"\u096f",
+       "\u09e6"-"\u09ef",
+       "\u0a66"-"\u0a6f",
+       "\u0ae6"-"\u0aef",
+       "\u0b66"-"\u0b6f",
+       "\u0be7"-"\u0bef",
+       "\u0c66"-"\u0c6f",
+       "\u0ce6"-"\u0cef",
+       "\u0d66"-"\u0d6f",
+       "\u0e50"-"\u0e59",
+       "\u0ed0"-"\u0ed9",
+       "\u1040"-"\u1049"
+      ]
+  >
+}
+
+// lexical analyser
+
+// starting method with EOF
+Query start() :
+{
+  Query q;
+}
+{
+  q = QueryPlus()
+  { return q; }
+  <EOF>
+}
+
+/**
+ * Query+
+ * If more than one query detected, an object of sequence query is returned. 
+ * If there is only one query, that particular instance of query is returned.
+ */
+Query QueryPlus() :
+{
+  Query q;
+  Query q1;
+  SequenceQuery sq = new SequenceQuery();
+}
+{
+  q = Query(null)
+  { 
+    sq.add(q);
+  }
+  
+  (
+    LOOKAHEAD(reserved())
+    q1 = Query(q)
+    { 
+      if(q1 instanceof InQuery ||  
+         q1 instanceof OverQuery ||
+         q1 instanceof MinusQuery ||
+         q1 instanceof ORQuery || 
+         q1 instanceof ANDQuery || 
+         q1 instanceof KleneQuery) {
+        sq.removeLastElement();
+      } 
+      
+      q = q1;
+      sq.add(q);
+    }
+  )*
+  
+  { 
+    if(q instanceof GapQuery) 
+      throw new ParseException(
+      "Gap cannot be the first/last element. See line:"+row+", column:"+column); 
+    
+    if(sq.size() == 1 && !(q instanceof InQuery || 
+         q instanceof OverQuery || q instanceof ORQuery || 
+         q instanceof ANDQuery || q instanceof KleneQuery ||
+         q instanceof MinusQuery))
+      return q; 
+    else 
+      return sq; 
+  }
+}
+
+/**
+ * Returns true if the next token in the stream is a reserved word
+ */
+boolean reserved() :
+{ }
+{
+  <string> 
+  | <leftbrace> 
+  | <leftbracket> 
+  | <or> 
+  | <and> 
+  | <in> 
+  | <over>
+  | <minus>  
+  | <plus>  
+  | <tok>
+  | <leftsquarebracket>
+  // hyphen or number to allow for negatives
+  | <hyphen>
+  | <number>
+  {return true;}
+}
+
+/**
+ * parse a single query.
+ */
+Query Query(Query previousQuery) :
+{
+  Query q;
+  Query[] qs = new Query[2];
+}
+{
+  (
+      (                    
+        <leftbracket>       // a query can be surrounded by ( and )
+        q = QueryPlus() 
+        <rightbracket> 
+      )
+    | q = AnnotationQuery() // surrounded with { and }
+    | q = TermOrNamedIndexQuery() // both start with same type of token
+    | q = QuotedTextQuery() // starts with "
+    | q = GapQuery() // starts with [ and ends with ]
+    | q = InQuery(previousQuery)   // starts with "IN"; it starts where the 
+                                   // previous query ends
+    | q = OverQuery(previousQuery) // starts with "OVER"; it starts where the 
+                                   // previous query ends
+    | q = MinusQuery(previousQuery) // starts with "OVER"; it starts where the 
+                                    // previous query ends    
+    | 
+      LOOKAHEAD(<or>) 
+      q = OrQuery(previousQuery) // starts with "|" or "OR"; it starts where the 
+                                 //previous query ends
+    | 
+        LOOKAHEAD(<and>) 
+        q = AndQuery(previousQuery) // starts with "&" or "AND"; it starts where the 
+                                 //previous query ends
+    | q = KleneQuery(previousQuery) // starts with "+"; it starts where the 
+                                    // previous query ends
+  )
+  { return q;}
+}
+
+/**
+ * Gap. Only valid if it is a part of a sequence query.
+ * Cannot appear at the start or at the end of a query
+ */
+Query GapQuery() :
+{
+  GapQuery gq = new GapQuery();
+  Token t;
+}
+{
+  t = <leftsquarebracket>
+  { 
+    column = t.beginColumn;
+    row = t.beginLine;
+  }
+   
+  
+  t = <number>
+  {gq.maxGap = Integer.parseInt(t.image);}
+  (
+    <period>
+    <period>
+    t = <number>
+    {gq.minGap = gq.maxGap; gq.maxGap = Integer.parseInt(t.image);}
+  )?
+  <rightsquarebracket>
+  { return gq;}
+}
+
+/**
+ * Returns true if the next token in the stream is a regex word
+ */
+boolean regex() :
+{ }
+{
+  <period>
+  <regex>
+  {return true;}
+}
+
+/**
+ * Returns true if the next token in the stream is a double number
+ */
+String number() :
+{ 
+  StringBuffer sb = new StringBuffer();
+  Token t;
+}
+{
+  (
+   t = <hyphen>
+   {sb.append(t.image);}
+  )?
+  
+  
+  t = <number>
+  {
+    sb.append(t.image);
+  }
+  
+  (
+    t = <period>
+    { sb.append(t.image); }
+    
+    t = <number>
+    { sb.append(t.image); }
+  )?
+  {return sb.toString();}
+}
+
+// Regext Query
+void RegexQuery(AnnotationQuery aq, String feature) : 
+{
+  Token t;
+  String flags = null;
+  Object value;
+  int constraintType = 0;
+}
+{
+  <period>
+  <regex>
+  <leftbracket>
+  t = <string>
+  { 
+    value = t.image.substring(1, t.image.length()-1);
+    constraintType = FeatureValuePair.REGEX;
+  }
+           
+  (
+    <comma>
+    t = <string>
+    { 
+      flags = t.image.substring(1, t.image.length()-1); 
+      value = new String[]{value.toString(), flags};
+    }
+  )?
+  <rightbracket>
+  {aq.add(constraintType, feature, value, flags);}
+}
+
+/**
+ * Annotation Query
+ * e.g. {AnnotationType featureName=featureValue}
+ * e.g. featureValue can be a quoted value
+ */
+Query AnnotationQuery() :
+{
+  AnnotationQuery aq = new AnnotationQuery();
+  Token t;
+  String feature = null;
+  Object value = null;
+  String flags = null;
+  String numberStr = "";
+  int constraintType = 0;
+}
+{
+  <leftbrace>
+  t = <tok>
+  { aq.type = unescape(t.image); }
+  
+  // atleast one feature=value should be there
+  (
+    // feature name
+    t = <tok>
+    {feature = unescape(t.image);}
+    (
+      LOOKAHEAD(regex())
+      RegexQuery(aq, feature)
+      |
+      (
+        (
+          (
+            (
+              t = <equals>
+              { constraintType = FeatureValuePair.EQ; }
+            )
+            |
+            (
+              t = <le>
+              { constraintType = FeatureValuePair.LE; }
+            )
+            |
+            (
+              t = <ge>
+              { constraintType = FeatureValuePair.GE; }
+            )
+            |
+            (
+              t = <gt>
+              { constraintType = FeatureValuePair.GT; }
+            )
+            |
+            (
+              t = <lt>
+              { constraintType = FeatureValuePair.LT; }
+            )
+          )
+          (
+            (
+              t = <string>
+              { value = t.image.substring(1, t.image.length()-1); }
+            )
+            |
+            (
+              t = <tok>
+              { value = unescape(t.image); }
+            )
+            |
+            (
+              numberStr = number() 
+              { 
+                try { 
+                  value = new Double(Double.parseDouble(numberStr)); 
+                } catch(NumberFormatException nfe) {
+                  throw new ParseException("Invalid Number :" + numberStr);
+                }
+              }
+            )
+          )
+        )
+        // add this pair to annotation query
+        {aq.add(constraintType, feature, value);}
+      )
+    )
+  )*
+  <rightbrace>
+  {return aq;}
+}
+
+/**
+ * UnQuotedText or NamedIndexQuery
+ * e.g. microsoft corporation 
+ * e.g. root:value
+ */
+Query TermOrNamedIndexQuery() :
+{
+  Token t;
+  Token t1;
+  String n;
+  TermQuery tq;
+}
+{
+  (
+    LOOKAHEAD(2) 
+    (
+      (
+        t = <tok> 
+        <colon>
+        {
+          tq = new TermQuery();
+          tq.index = unescape(t.image);
+        }
+      )
+      (
+        (
+          t1 = <tok>
+          { tq.term = unescape(t1.image); }
+        )
+        |
+        (
+          t1 = <string>
+          { tq.term = t1.image.substring(1, t1.image.length()-1); } 
+        )
+      )
+      { return tq; }
+    )
+    |
+    (
+      t = <tok> 
+      {
+        // if no index name is specified, parse the token like a quoted
+        // string.
+        return parseString(unescape(t.image));
+      }
+    )
+    |
+    (
+      // bare number is treated as a query for that number as a string
+      n = number()
+      {
+        return parseString(unescape(n));
+      }
+    )
+  )
+}
+
+
+/**
+ * obtaining a term or sequence query with all terms in it.
+ * e.g. "amazing videos"
+ */
+Query QuotedTextQuery() :
+{
+  String s;
+  Token t;
+}
+{
+  t = <string>
+  { s= t.image.substring(1, t.image.length()-1); } 
+  {return parseString(s); }
+}
+
+/** 
+ * OrQuery
+ * e.g. Query | Query
+ * In the example above, first "Query" is supplied in the previousQuery parameter.
+ * This method starts parsing tokens after the previousQuery has ended.
+ * i.e. first character after the previous query must be "|"
+ */
+Query OrQuery(Query previousQuery) :
+{
+  ORQuery orQuery = new ORQuery();
+  Query q;
+  Token t;
+}
+{
+  t = <or>
+
+  {
+    if(previousQuery instanceof GapQuery) 
+      throw new ParseException("First element cannot be Gap. See line:"+row+", column:"+column);
+
+    column = t.beginColumn;
+    row = t.beginLine;
+    
+    if(previousQuery == null)
+      throw new ParseException(
+         "Use of OR at the start of a query is not permitted. See line:"+row+", column:"+column);
+         
+    orQuery.add(previousQuery); 
+  }
+
+  q = QueryPlus()
+  {
+    // merging all ORQueries into one
+    // i.e. ORQuery { query1, ORQuery {query2, query3}}
+    // will become ORQuery {query1, query2, query3}
+    if(q instanceof ORQuery) {
+      ORQuery oq = (ORQuery) q;
+      for(Query qq : oq.getQueries()) {
+        orQuery.add(qq);
+      }
+    } else {
+      orQuery.add(q);
+    }
+    return orQuery;
+  }
+}
+
+
+/** 
+ * AndQuery
+ * e.g. Query & Query
+ * In the example above, first "Query" is supplied in the previousQuery parameter.
+ * This method starts parsing tokens after the previousQuery has ended.
+ * i.e. first character after the previous query must be "&" Or AND
+ */
+Query AndQuery(Query previousQuery) :
+{
+  ANDQuery andQuery = new ANDQuery();
+  Query q;
+  Token t;
+}
+{
+  t = <and>
+
+  {
+    if(previousQuery instanceof GapQuery) 
+      throw new ParseException("First element cannot be Gap. See line:"+row+", column:"+column);
+
+    column = t.beginColumn;
+    row = t.beginLine;
+    
+    if(previousQuery == null)
+      throw new ParseException(
+         "Use of AND at the start of a query is not permitted. See line:"+row+", column:"+column);
+         
+    andQuery.add(previousQuery); 
+  }
+
+  q = QueryPlus()
+  {
+    // merging all ANDQueries into one
+    // i.e. ANDQuery { query1, ANDQuery {query2, query3}}
+    // will become ANDQuery {query1, query2, query3}
+    if(q instanceof ANDQuery) {
+      ANDQuery aq = (ANDQuery) q;
+      for(Query qq : aq.getQueries()) {
+        andQuery.add(qq);
+      }
+    } else {
+      andQuery.add(q);
+    }
+    return andQuery;
+  }
+}
+
+/** 
+ * InQuery
+ * e.g. Query IN Query
+ * In the example above, first "Query" is supplied in the previousQuery parameter.
+ * This method starts parsing tokens after the previousQuery has ended.
+ * i.e. first character after the previous query must be "IN"
+ */
+Query InQuery(Query previousQuery) :
+{
+  InQuery inQuery = new InQuery();
+  Query q;
+  Token t;
+}
+{
+  t = <in>
+  {
+    if(previousQuery instanceof GapQuery) 
+      throw new ParseException("First element cannot be Gap. See line:"+row+", column:"+column);
+
+    column = t.beginColumn;
+    row = t.beginLine;
+    
+    if(previousQuery == null)
+      throw new ParseException(
+         "Use of IN at the start of a query is not permitted. See line:"+row+", column:"+column);
+    
+    inQuery.innerQuery = previousQuery;
+  }  
+  q = QueryPlus()
+  { 
+    inQuery.outerQuery = q; 
+    return inQuery; 
+  }
+}
+
+
+/** 
+ * OverQuery
+ * e.g. Query OVER Query
+ * In the example above, first "Query" is supplied in the previousQuery parameter.
+ * This method starts parsing tokens after the previousQuery has ended.
+ * i.e. first character after the previous query must be "OVER"
+ */
+Query OverQuery(Query previousQuery) :
+{
+  OverQuery overQuery = new OverQuery();
+  Query q;
+  Token t;
+}
+{
+  t = <over>
+  {
+    if(previousQuery instanceof GapQuery) 
+      throw new ParseException(
+        "First element cannot be Gap. See line:"+row+", column:"+column);
+
+    column = t.beginColumn;
+    row = t.beginLine;
+    
+    if(previousQuery == null)
+      throw new ParseException(
+         "Use of Over at the start of a query is not permitted. " + 
+         "See line:"+row+", column:"+column);
+    
+    overQuery.overQuery = previousQuery; 
+  }  
+  
+  q = QueryPlus()
+  { 
+    overQuery.innerQuery = q;
+    return overQuery; 
+  }
+}
+
+
+/** 
+ * MinusQuery
+ * e.g. Query MINUS Query
+ * In the example above, first "Query" is supplied in the previousQuery parameter.
+ * This method starts parsing tokens after the previousQuery has ended.
+ * i.e. first character after the previous query must be "MINUS" or "-"
+ */
+Query MinusQuery(Query previousQuery) :
+{
+  MinusQuery minusQuery = new MinusQuery();
+  Query q;
+  Token t;
+}
+{
+  t = <minus>
+  {
+    if(previousQuery instanceof GapQuery) 
+      throw new ParseException(
+        "First element cannot be Gap. See line:"+row+", column:"+column);
+
+    column = t.beginColumn;
+    row = t.beginLine;
+    
+    if(previousQuery == null)
+      throw new ParseException(
+         "Use of MINUS at the start of a query is not permitted. " + 
+         "See line:"+row+", column:"+column);
+    
+    minusQuery.leftQuery = previousQuery; 
+  }  
+  
+  q = QueryPlus()
+  { 
+    minusQuery.rightQuery = q;
+    return minusQuery; 
+  }
+}
+
+/** 
+ * KleneQuery
+ * e.g. Query+3, Query+3..5
+ * In all the above examples, "Query" is supplied in the previousQuery parameter.
+ * This method starts parsing tokens after the previousQuery has ended.
+ * i.e. first character after the previous query must be "+"
+ */
+Query KleneQuery(Query previousQuery) :
+{
+  KleneQuery kq = new KleneQuery();
+  Token t;
+  Query q;
+}
+{
+  t = <plus>
+  {
+    if(previousQuery instanceof GapQuery) 
+      throw new ParseException("First element cannot be Gap." + 
+      " See line:"+row+", column:"+column);
+
+    column = t.beginColumn;
+    row = t.beginLine;
+    
+    if(previousQuery == null)
+      throw new ParseException(
+         "Use of KleneOperator + at the start of a query is not permitted." + 
+         " See line:"+row+", column:"+column);
+    
+    q = previousQuery; 
+  }  
+  
+  {
+    kq.query = q;
+    kq.min = 1;
+    kq.max = 1;
+  }
+  
+  (
+    t = <number>
+    { 
+      kq.max = Integer.parseInt(t.image); 
+    }
+    
+    (
+      <period>
+      <period>
+      t = <number>
+      {
+        kq.min = kq.max;
+        kq.max = Integer.parseInt(t.image);
+      }
+    )?
+  )
+  {return kq;}
+}

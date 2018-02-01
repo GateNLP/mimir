@@ -1,0 +1,887 @@
+From a user's point of view, \Mimir\ is a tool for searching a collection of
+semantically annotated documents.  It provides facilities for searching over
+different views of the document text, for example one can search the document
+words, the part-of-speech of those words, or their morphological roots. Beside
+searching the document text, \Mimir\ also supports searches over the documents'
+semantic annotations, where queries are based on annotation types and
+restrictions over the values of annotation features. These different search
+paradigms can be combined freely into complex queries, with support for
+sequences, repetitions, and Boolean operators.
+
+A search session entails the formulation of a query, running the query with the
+\Mimir\ query engine, and consuming the query results.  \Mimir\ queries are
+expressed in a text-based query language which is described in
+section~\ref{sec:search:ql}.  The way these queries are submitted to \Mimir\
+depends on how it is deployed, the various interfaces are discussed in
+section~\ref{sec:search:interfaces}.
+
+
+\section{The \Mimir\ Query Language}\label{sec:search:ql}
+
+A \Mimir\ query is either a simple query (i.e. a {\tt String} query,
+section~\ref{sec:string-query}, or an {\tt Annotation} query,
+section~\ref{sec:annotation-query}), or a compound one, which comprises a set of
+sub-queries linked by operators. If no operator is placed between any two
+sub-queries, then the {\tt Sequence} operator (see
+section~\ref{sec:sequence-query}) is implied. This means that several queries
+written one after another are interpreted as one sequence query. For example, a
+query like `{\it the brown dog}' is interpreted as a sequence query, having
+three sub-queries, each of them being a String query. This would match
+occurrences of the exact phrase `{\it the brown dog}' in the indexed documents.
+Note that this is different from the standard behaviour of search engines,
+which would simply match documents in which all three query terms occur, in
+whichever order. That type of search is also supported in \Mimir, through the
+{\tt AND} operator (see section~\ref{sec:and-query}).  Parentheses can be used
+for grouping where the syntax would otherwise be ambiguous.
+
+\subsection{String Queries}\label{sec:string-query}
+
+The simplest form of query is a query term. This will match all occurrences of
+the query term in the indexed documents.
+
+If the \Mimir\ index being interrogated includes multiple token indexes, then
+the particular index to be searched can be specified by prefixing the query
+term with the index name and a colon, for example the query
+`{\it root:be}'\footnote{This assumes that an index named {\tt root} exists,
+and was used to store the morphological root of the words.} will match all
+morphological forms of the verb {\it to be}. If the name of the string index is
+omitted, then the first configured index is used. By convention (reflected in
+the default \Mimir\ configuration) the first string index is used to store the
+terms text, so the default behaviour is to search over the document text, as
+expected.  Double-quoted strings are treated as plain term queries against the
+first token index in a similar way.
+
+In fact the above is a slight simplification, as bare terms (and double-quoted
+strings) are actually tokenised before being searched for.  This is because
+\Mimir\ views documents as streams of tokens, not characters, and the query
+must match the tokenisation that was used to index the documents.  For example,
+the default GATE tokeniser treats ``don't'' as two tokens, ``do'' and ``n't'',
+so a query for {\em don't} as a single token would fail.  To get around this,
+\Mimir\ runs a GATE application over the string of the query to generate
+Token annotations, and then constructs a query for these tokens in sequence
+(see section~\ref{sec:sequence-query}).  Named index queries (``root:be'') are
+not tokenised, so if you want to avoid tokenising a particular query for any
+reason (e.g. if you suspect there is a mis-tokenised document in your index)
+you can explicitly name the appropriate index (typically ``string'', i.e.
+string:don't).
+
+\subsubsection{Annotation Queries}\label{sec:annotation-query}
+
+If annotation indexes were used during indexing, \Mimir\ allows searching for
+annotation-based patterns. An annotation is a piece of metadata
+associated with a text segment, with a {\bf type} and optionally
+{\bf features}.  An annotation query takes the following form: 
+{\tt \{Type feature1=value1 feature2=value2 \ldots\}}.  The annotation type is
+required, the feature constraints are optional.
+
+While the example above uses equality for the feature constraints, other
+operators are also available. Here is the full list:
+\bde
+  \item[equality:] represented by the sign $=$, matches annotations which have
+  the given value for the specified feature. The equality operator is
+  applicable to features of any type.
+  \item[comparison operators:] represented by one of the following symbols:
+  $<$, $<=$, $>$, $>=$, with the usual meaning. These operators can apply to
+  features of type {\tt nominal}, {\tt numeric}, or {\tt text}.
+  \item[regular expressions:] can be specified using the syntax {\tt
+  REGEX(pattern, flags)}, where the {\tt pattern} represents the regular
+  expression sought, and the {\tt flags} are optional, and can be used to
+  change the way matching is performed. See
+  \url{http://www.w3.org/TR/xpath-functions/#regex-syntax} for a full
+  specification of the regular expression support. The {\tt REGEX} operator can
+  only be used for {\tt nominal}, and {\tt text} features.
+\ede
+
+Examples:\\
+\{Person gender $=$ female\} -- searches for annotations of type
+{\tt Person}, which have a feature named {\tt gender}, with the value
+{\it female}.
+
+\{Measurement type $=$ scalar normalisedValue $>0$ normalisedValue $<10$
+normalisedUnit $=$ m\} -- searches for scalar measurements, with a unit of {\it
+metre}, and a normalised value between $0$ and $10$\footnote{The extended
+support for Measurement annotations is discussed further in
+section~\ref{sec:plugins:measurements}.}.  Note that the same feature name
+can be used in several constraints, in which case only annotations where the
+feature meets {\em all} the constraints will be matched by the query.  For
+disjunctive queries, use the OR operator described below.
+
+In order to be able to search on a particular feature, that feature
+must have been specified in the index template when the index was created --
+\Mimir\ indexes only the features it has been told to index.  There may be
+additional ``synthetic'' features available at query time depending on the
+semantic annotation helper that the index uses for the given annotation type,
+for example the SPARQL helper allows queries on the ``feature'' named
+``sparql'', the measurements helper allows queries for ``spec'' etc.
+
+\subsection{AND Operator: ``{\tt \&}''}\label{sec:and-query}
+
+The `{\tt AND}' (also `\&`) operator can be used to specify queries that should
+match document segments that include at least one hit from each of the
+sub-queries. The results returned will always be the shortest document segments
+that satisfy the query.
+
+\subsection{OR Operator: ``{\tt |}''}\label{sec:or-query}
+
+{\tt OR} queries are used to search hits that match one of a set of alternative
+query expressions. This is indicated by using the {\tt `OR'} (also`\verb!|!')
+operator between the sub-queries. A query of the form {\tt Query1 | Query2} will
+return hits that match either sub-query {\tt Query1} or sub-query {\tt Query2}.
+
+\subsection{IN and OVER Operators}\label{sec:containment-query}
+
+The operators {\tt IN} and {\tt OVER} are used to search for hits of a query
+that contain, or are contained in the hits of another query. For example:
+\begin{description}
+\item[Query1 IN Query2] will match all the hits of {\tt Query1} that are
+contained in a hit of {\tt Query2}.
+\item[Query1 OVER Query2] will match all hits of {\tt Query1} that contain (are
+overlapping) a hit of {\tt Query2}.
+\end{description}
+
+\subsection{MINUS Operator}\label{sec:minus-query}
+
+The {\tt MINUS} operator is a binary operator that takes a left and
+a right operand. It returns the hits from the left sub-query that are not also
+valid hits for right sub-query. For example:
+\begin{description}
+\item[Query1 MINUS Query2] will match all the hits of {\tt Query1} that are
+not also hits of {\tt Query2}.
+\end{description}
+
+\subsection{Repeats Operator: ``+''}\label{sec:kleene-query}
+
+The $+$ operator can be used to match text segments that comprise a sequence of
+hits from the same sub-query. The length of the sequence is specified though a
+number (representing the {\bf maximum} number of repetitions) or through two
+numeric values (representing the {\bf minimum} and {\bf maximum} number of
+repetitions). For example:
+\bde
+  \item[{\tt to+3}] will match one, two, or three repeated occurrences of the
+  word {\it to}. The returned hits will be of the form ``{\it to}'', ``{\it to  
+  to}'', or ``{\it to to to}'').
+  \item[{\tt \{Person\}+2..5}] will match sequences of 2, 3, 4, or 5
+  adjacent {\tt Person} annotations.
+  \item[{\tt (\{Location locType = city\} |
+  \{Location locType = country\})+3}] will match any sequence of up to
+  three Location annotations where each one refers to either a city or a
+  country.
+\ede
+
+Note that there is no support for a repetition count of zero (an optional
+match) -- you will need to reformulate the query to cover the versions with and
+without the optional match separately and combine them with an OR, for example
+{\tt (term1 term2+2 term3) | (term1 term3)}.  Similarly there is no support for
+unbounded wildcards ({\em n} times or more).
+
+\subsection{Sequence Queries and Gaps}\label{sec:sequence-query}
+
+As sequence is the default operator in \Mimir, there is no graphical sign for
+it: simply writing a set of queries one after another will cause a search for
+sequences of hits, one from each sub-query. For example, the query ``{\tt the
+energy level}'' is actually a sequence query where the first sub-query searches
+for the word ``{\it the}'', the second for ``{\it energy}'', and the last for
+``{\it level}''.
+
+It is sometimes useful to include gaps in a sequence query, that is to allow
+arbitrary text fragments (of specified length) to occur in-between the hits
+from some of the sub-queries. This can be done by using the gap markers ``{\tt
+[n]}'', or ``{\tt [m..n]}''. These will match a sequence of length $n$, or with
+a length of between $m$ and $n$ of arbitrary tokens.
+
+For example the query ``{\tt the [2] root:time}'' will match phrases like ``{\it
+the best of times}'' or ``{\it the worst of times}'', whereas the query ``{\tt
+the [2..10] root:time}'' would also match ``{\it the best use of one's time}''
+(where the gap consists of six tokens -- five words and an apostrophe).
+
+\subsection{Escaping Reserved Words}
+
+Some words are part of the query language definition so they cannot be used
+directly as query terms. If that is desired, then these constructs must be
+escaped as shown in the following table:
+\begin{center}
+\begin{tabular}{|l|l|}
+\hline
+{\bf Reserved input} & {\bf Escaped form}\\
+\hline \hline
+\{, \} &  $\backslash$\{, $\backslash$\}\\
+\hline
+(, )  & $\backslash$(, $\backslash$) \\
+\hline
+[, ] & $\backslash$[, $\backslash$]\\
+\hline
+: &  $\backslash$: \\
+\hline
++ &  $\backslash$+ \\
+\hline
+{\tt |} &  $\backslash${\tt |} \\
+\hline
+{\tt \&} &  $\backslash${\tt \&} \\
+\hline
+? &  $\backslash$? \\
+\hline
+$\backslash$ &  $\backslash$$\backslash$ \\
+\hline
+. &  $\backslash$. \\
+\hline
+" &  $\backslash$" \\
+\hline 
+=  & $\backslash$= \\
+\hline
+IN & ``IN'' \\
+\hline
+OVER & ``OVER''\\ 
+\hline
+OR & ``OR''\\ 
+\hline
+AND & ``AND''\\ 
+\hline
+\end{tabular}\\
+\vspace{1ex}
+Escaping reserved constructs in the \Mimir\ query language
+\end{center}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Search Interfaces -- How to Submit Queries to \Mimir}
+\label{sec:search:interfaces}
+
+The \Mimir\ Grails plugin supplies two search interfaces by default, with the
+infrastructure to implement other interfaces as required.  An XML-based service
+interface allows other applications to submit queries to the indexes hosted by
+a \Mimir\ web application by POSTing requests over HTTP (described in
+section~\ref{sec:search:service}).  There is also an example user-facing search
+interface called {\em Web UI}, intended primarily for testing and demonstration
+purposes (described in section~\ref{sec:search:gus}).  Both of these interfaces
+interact with the underlying indexes through the {\tt SearchService} Grails
+service provided by the plugin.  When embedding the \Mimir\ Grails plugin in
+another Grails application this service is the primary means for application
+code to interact with \Mimir, and is described in
+section~\ref{sec:search:grails}.
+
+\subsection{\Mimir\ Search Web Service}\label{sec:search:service}
+
+The \Mimir\ web application exposes the search functionality as a web service
+that can be accessed through a simple HTTP interface. All requests are performed
+by calling an action with a set of parameters; the results of a call are encoded
+in XML and returned as the response to the request.  All the example URLs in
+this section assume the {\tt mimir-cloud} application with its
+default URL mappings, running on {\tt localhost} port 8080.
+
+The \Mimir\ web service can be accessed at a URL like:\\
+{\tt http://localhost:8080/mimir-cloud/\{index ID\}/search/\{action\}},
+where the {\tt action} value is the name of one of the supported actions,
+described below. The actual URL (with the correct index ID included) can be
+obtained from the {\em index information page} presented by  the \Mimir\ web
+application.  Parameters may be supplied as query parameters with a {\tt GET}
+request or in normal {\tt application/x-www-form-urlencoded} form in a
+{\tt POST} request.  Alternatively, they may be supplied as XML (if the request
+content type is {\tt text/xml} or {\tt application/xml}) of the form:
+\begin{verbatim}
+<request xmlns="http://gate.ac.uk/ns/mimir">
+  <firstParam>value</firstParam>
+  <secondParam>value</secondParam>
+</request>
+\end{verbatim}
+
+The first request to the service will return a session cookie, which must be
+passed back with all subsequent requests.
+
+When accessing the service URL with no value provided for {\tt action}, a help
+page will be returned presenting the documentation associated with the XML web
+service.
+
+% Switch to compact listings mode
+\lstcompact\
+
+The following actions are available:\\
+\begin{longtable}{|p{1.8cm}|p{10.2cm}|}
+\multicolumn{2}{l}{\tt \bf help}\\
+\hline
+Function & Obtain service documentation.\\
+\hline
+Parameters & none\\
+\hline
+Returns & A help message describing how to use the service.\\
+\hline
+\end{longtable}
+
+\begin{longtable}{|p{1.8cm}|p{10.2cm}|}
+\multicolumn{2}{l}{\tt \bf postQuery} \\
+\hline
+Function & Starts a new query. This call returns immediately, as the query will
+execute asynchronously in a background thread.\\
+\hline
+Parameters & \begin{minipage}[t]{10.2cm}
+\begin{description}
+\item[queryString:]the text of the query, using the \Mimir\ query language.
+\end{description}
+\end{minipage}\\
+\hline
+Returns & \begin{minipage}[t]{10.2cm}
+An XML message with the ID of the new query,
+or an error message if there were any problems while parsing the query.
+
+Example request:\\
+\lstinline[language=XML]!http://localhost:8080/mimir-cloud/a4300d00-2dd1-4797-8eaa-e65b0c7d879b/search/postQuery?queryString=%22the%22!
+
+Example response:
+\begin{lstlisting}[language=XML]
+<?xml version="1.0"?>
+<message xmlns='http://gate.ac.uk/ns/mimir'>
+  <state>SUCCESS</state>
+  <data>
+    <queryId>a28656e2-18f4-4b58-b9d3-9a9378eb14d0</queryId>
+  </data>
+</message>
+\end{lstlisting}
+\end{minipage}\\
+\hline
+\end{longtable}
+
+\begin{longtable}{|p{1.8cm}|p{10.2cm}|}
+\multicolumn{2}{l}{\tt \bf documentsCount} \\
+\hline
+Function & Gets the number of result documents.\\
+\hline
+Parameters & \begin{minipage}[t]{10.2cm}
+\begin{description}
+\item[queryId:]the ID for the query, as returned by the {\tt postQuery} action.
+\end{description}
+\end{minipage}\\
+\hline
+Returns & \begin{minipage}[t]{10.2cm}
+An XML message encapsulating a numeric value, or an error message if there were 
+any problems. The value returned is {\tt -1} if the search has not yet
+completed, or the total number of result documents otherwise.
+
+Example request:\\
+\lstinline[language=XML]!http://localhost:8080/mimir-cloud/a4300d00-2dd1-4797-8eaa-e65b0c7d879b/search/documentsCount?queryId=a28656e2-18f4-4b58-b9d3-9a9378eb14d0!
+
+Example response:
+\begin{lstlisting}[language=XML]
+<?xml version="1.0"?>
+<message xmlns="http://gate.ac.uk/ns/mimir">
+  <state>SUCCESS</state>
+  <data>
+    <value>8209</value>
+  </data>
+</message>
+\end{lstlisting}
+
+Example error response:
+\begin{lstlisting}[language=XML]
+<?xml version="1.0"?>
+<message xmlns='http://gate.ac.uk/ns/mimir'>
+  <state>ERROR</state>
+  <error>Query ID a28656e2-18f4-4b58-b9d3-9a9378eb14d1 not known!</error>
+</message>
+\end{lstlisting}
+\end{minipage}\\
+\hline
+\end{longtable}
+
+\begin{longtable}{|p{1.8cm}|p{10.2cm}|}
+\multicolumn{2}{l}{\tt \bf documentsCurrentCount} \\
+\hline
+Function & Gets the number of result documents found so far.\\
+\hline
+Parameters & \begin{minipage}[t]{10.2cm}
+\begin{description}
+\item[queryId:]the ID for the query, as returned by the {\tt postQuery} action.
+\end{description}
+\end{minipage}\\
+\hline
+Returns & \begin{minipage}[t]{10.2cm}
+An XML message encapsulating a numeric value, or an error message if there were 
+any problems. After the search completes, the value returned is identical to
+that returned by calling {\tt documentsCount}.
+
+Example request:\\
+\lstinline[language=XML]!http://localhost:8080/mimir-cloud/a4300d00-2dd1-4797-8eaa-e65b0c7d879b/search/documentsCurrentCount?queryId=a28656e2-18f4-4b58-b9d3-9a9378eb14d0!
+
+Example response:
+\begin{lstlisting}[language=XML]
+<?xml version="1.0"?>
+<message xmlns="http://gate.ac.uk/ns/mimir">
+  <state>SUCCESS</state>
+  <data>
+    <value>142</value>
+  </data>
+</message>
+\end{lstlisting}
+
+Example error response:
+\begin{lstlisting}[language=XML]
+<?xml version="1.0"?>
+<message xmlns='http://gate.ac.uk/ns/mimir'>
+  <state>ERROR</state>
+  <error>Query ID a28656e2-18f4-4b58-b9d3-9a9378eb14d1 not known!</error>
+</message>
+\end{lstlisting}
+\end{minipage}\\
+\hline
+\end{longtable}
+
+
+\begin{longtable}{|p{1.8cm}|p{10.2cm}|}
+\multicolumn{2}{l}{\tt \bf documentId} \\
+\hline
+Function & Obtains the document ID for the document at a given rank (position in
+the results list).\\
+\hline
+Parameters & \begin{minipage}[t]{10.2cm}
+\begin{description}
+\item[queryId:]the ID for the query, as returned by the {\tt postQuery} action.
+\item[rank:]the rank (position on the results list) for the requested document.
+\end{description}
+\end{minipage}\\
+\hline
+Returns & \begin{minipage}[t]{10.2cm}
+An XML message encapsulating a numeric value, or an error message if there were 
+any problems.
+
+Example request:\\
+\lstinline[language=XML]!http://localhost:8080/mimir-cloud/a4300d00-2dd1-4797-8eaa-e65b0c7d879b/search/documentId?queryId=a28656e2-18f4-4b58-b9d3-9a9378eb14d0&rank=3!
+
+Example response:
+\begin{lstlisting}[language=XML]
+<?xml version="1.0"?>
+<message xmlns='http://gate.ac.uk/ns/mimir'>
+  <state>SUCCESS</state>
+  <data>
+    <value>11</value>
+  </data>
+</message>
+\end{lstlisting}
+\end{minipage}\\
+\hline
+\end{longtable}
+
+
+\begin{longtable}{|p{1.8cm}|p{10.2cm}|}
+\multicolumn{2}{l}{\tt \bf documentScore} \\
+\hline
+Function & Obtains the score for the document at a given rank (position in
+the results list).\\
+\hline
+Parameters & \begin{minipage}[t]{10.2cm}
+\begin{description}
+\item[queryId:]the ID for the query, as returned by the {\tt postQuery} action.
+\item[rank:]the rank (position on the results list) for the requested document.
+\end{description}
+\end{minipage}\\
+\hline
+Returns & \begin{minipage}[t]{10.2cm}
+An XML message encapsulating a numeric value, or an error message if there were 
+any problems.
+
+Example request:\\
+\lstinline[language=XML]!http://localhost:8080/mimir-cloud/a4300d00-2dd1-4797-8eaa-e65b0c7d879b/search/documentScore?queryId=a28656e2-18f4-4b58-b9d3-9a9378eb14d0&rank=3!
+
+Example response:
+\begin{lstlisting}[language=XML]
+<?xml version="1.0"?>
+<message xmlns="http://gate.ac.uk/ns/mimir">
+  <state>SUCCESS</state>
+  <data>
+    <value>12.330469310919446</value>
+  </data>
+</message>
+\end{lstlisting}
+\end{minipage}\\
+\hline
+\end{longtable}
+
+\begin{longtable}{|p{1.8cm}|p{10.2cm}|}
+\newpage\multicolumn{2}{l}{\tt \bf documentHits} \\
+\hline 
+Function & Obtains a set of hits. Each hit is defined by a document
+ID, a position and a length, both of which are defined in terms of tokens, not
+characters (see Section~\ref{sec:indexing:tokens} for details).\\
+\hline
+Parameters & \begin{minipage}[t]{10.2cm}
+\begin{description}
+\item[queryId:]the ID for the query, as returned by the {\tt postQuery} action.
+\item[rank:]the rank (position on the results list) for the requested document.
+\end{description}
+\end{minipage}\\
+\hline
+Returns & \begin{minipage}[t]{10.2cm}
+An XML message encapsulating a set of {\tt <hit>} elements, one for
+each individual hit.
+
+Example request:\\
+\lstinline[language=XML]!http://localhost:8080/mimir-cloud/a4300d00-2dd1-4797-8eaa-e65b0c7d879b/search/documentHits?queryId=a28656e2-18f4-4b58-b9d3-9a9378eb14d0&rank=3!
+
+Example response:
+\begin{lstlisting}[language=XML]
+<?xml version="1.0"?>
+<message xmlns='http://gate.ac.uk/ns/mimir'>
+  <state>SUCCESS</state>
+  <data>
+    <hits>
+      <hit documentId='11' position='257' length='1'/>
+      <hit documentId='11' position='266' length='1'/>
+      <hit documentId='11' position='290' length='1'/>
+      <hit documentId='11' position='303' length='1'/>
+      <hit documentId='11' position='309' length='1'/>
+      <hit documentId='11' position='316' length='1'/>
+      <hit documentId='11' position='320' length='1'/>
+      <hit documentId='11' position='332' length='1'/>
+      <hit documentId='11' position='335' length='1'/>
+      <hit documentId='11' position='342' length='1'/>
+      <hit documentId='11' position='348' length='1'/>
+    </hits>
+  </data>
+</message>
+\end{lstlisting}
+\end{minipage}\\
+\hline
+\end{longtable}
+
+\begin{longtable}{|p{1.8cm}|p{10.2cm}|}
+\multicolumn{2}{l}{\tt \bf documentText} \\
+\hline
+Function & Action for obtaining (a segment of) the text of a document.\\
+\hline
+Parameters & \begin{minipage}[t]{10.2cm}
+\begin{description}
+\item[queryId:]the ID for the query that has returned the document ID being
+used, as returned by the {\tt postQuery} action.
+\item[rank:]the rank (position on the results list) for the requested document.
+\item[termPosition]the position of the first returned token. This parameter is
+optional; defaults to $0$ is not provided, which means the first token of the
+document.
+\item[length]the number of tokens to be returned. This parameter is optional,
+if omitted, all the document tokens will be returned.
+\end{description}
+\end{minipage}\\
+\hline
+Returns & \begin{minipage}[t]{10.2cm}
+An XML message containing the text of all the individual tokens and, if
+available, the spaces between them.
+
+This action could be used, for example, to obtain text snippets around a query
+hit.
+
+Example request:\\
+\lstinline[language=XML]!http://localhost:8080/mimir-cloud/a4300d00-2dd1-4797-8eaa-e65b0c7d879b/search/documentText?queryId=a28656e2-18f4-4b58-b9d3-9a9378eb14d0&rank=1&termPosition=100&length=10!
+
+Example response:
+\begin{lstlisting}[language=XML]
+<?xml version="1.0"?>
+<message xmlns='http://gate.ac.uk/ns/mimir'>
+  <state>SUCCESS</state>
+  <data>
+    <text position='100'>25</text>
+    <text position='101'>C</text>
+    <space> </space>
+    <text position='102'>1</text>
+    <text position='103'>/</text>
+    <text position='104'>08</text>
+    <space> </space>
+    <text position='105'>C</text>
+    <text position='106'>25</text>
+    <text position='107'>C</text>
+    <space>   </space>
+    <text position='108'>1</text>
+    <text position='109'>/</text>
+  </data>
+</message>
+\end{lstlisting}
+\end{minipage}\\
+\hline
+\end{longtable}
+
+\begin{longtable}{|p{1.8cm}|p{10.2cm}|}
+\multicolumn{2}{l}{\tt \bf documentMetadata} \\
+\hline
+Function & Returns the title and URI associated with a document. Optionally,
+other metadata fields can also be obtained. All these values were provided at
+indexing time.\\
+\hline
+Parameters & \begin{minipage}[t]{10.2cm}
+\begin{description}
+\item[queryId:]the ID for the query that has returned the document ID being
+used, as returned by the {\tt postQuery} action.
+\item[rank:]the rank (position on the results list) for the requested document.
+\item[fieldNames:](optional) a comma-separated list of other field names to be
+returned.
+\end{description}
+\end{minipage}\\
+\hline
+Returns & \begin{minipage}[t]{10.2cm}
+An XML message encapsulating the several string values, or an error message if
+there were any problems.
+
+Example request:\\
+\lstinline[language=XML]!http://localhost:8080/mimir-cloud/a4300d00-2dd1-4797-8eaa-e65b0c7d879b/search/documentMetadata?queryId=a28656e2-18f4-4b58-b9d3-9a9378eb14d0&documentId=1!
+
+Example response:
+\begin{lstlisting}[language=XML]
+<?xml version="1.0"?>
+<message xmlns="http://gate.ac.uk/ns/mimir">
+  <state>SUCCESS</state>
+  <data>
+    <documentTitle>
+      Virtual job-hunting: Technology fills situations vacant
+    </documentTitle>
+    <documentURI>http://www.bbc.co.uk/news/business-12194581</documentURI>
+  </data>
+</message>
+\end{lstlisting}
+\end{minipage}\\
+\hline
+\end{longtable}
+
+\begin{longtable}{|p{1.8cm}|p{10.2cm}|}
+\multicolumn{2}{l}{\tt \bf renderDocument} \\
+\hline
+Function & Renders the document text and hits for a given document, in the
+context of a given query. The HTML of the document is rendered directly to the
+response stream of the connection.\\
+\hline
+Parameters & \begin{minipage}[t]{10.2cm}
+\begin{description}
+\item[queryId:]the ID for the query, as returned by the {\tt postQuery} action.
+\item[rank:]the rank (position on the results list) for the requested document.
+\end{description}
+\end{minipage}\\
+\hline
+Returns & \begin{minipage}[t]{10.2cm}
+HTML content. The hits are rendered as 
+\lstinline[language=HTML]!<span class="mimir-hit">...</span>!.
+
+Example request:\\
+\lstinline[language=XML]!http://localhost:8080/mimir-cloud/a4300d00-2dd1-4797-8eaa-e65b0c7d879b/search/renderDocument?queryId=a28656e2-18f4-4b58-b9d3-9a9378eb14d0&rank=1!
+
+\end{minipage}\\
+\hline
+\end{longtable}
+
+\begin{longtable}{|p{1.8cm}|p{10.2cm}|}
+\multicolumn{2}{l}{\tt \bf renderDocument} \\
+\hline
+Function & Alternative version of the previous action. Renders the document text
+and hits for a given document, outside of the context of any given query. The
+HTML of the document is rendered directly to the response stream of the connection.\\
+\hline
+Parameters & \begin{minipage}[t]{10.2cm}
+\begin{description}
+\item[documentId:]the ID for the document, as returned by the {\tt documentId}
+action.
+\end{description}
+\end{minipage}\\
+\hline
+Returns & \begin{minipage}[t]{10.2cm}
+HTML content. No hits are highlighted, as there is no query context
+available.
+
+Example request:\\
+\lstinline[language=XML]!http://localhost:8080/mimir-cloud/a4300d00-2dd1-4797-8eaa-e65b0c7d879b/search/renderDocument?documentId=11!
+
+\end{minipage}\\
+\hline
+\end{longtable}
+
+\begin{longtable}{|p{1.8cm}|p{10.2cm}|}
+\multicolumn{2}{l}{\tt \bf close} \\
+\hline
+Function & Closes a query, releasing all resources allocated for supporting
+it. After a query is closed, no more actions can be performed for it. It is
+important to close queries, as each running query uses up memory on the server.
+Queries are also closed automatically after a period of inactivity (upon session
+expiration, the time for which is defined in the configuration of the  web
+application server -- this is why it is important to pass the session cookie
+you received from {\tt postQuery} back to the server with subsequent calls).
+\\
+\hline
+Parameters & \begin{minipage}[t]{10.2cm}
+\begin{description}
+\item[queryId:]the ID for the query, as returned by the {\tt postQuery} action.
+\end{description}
+\end{minipage}\\
+\hline
+Returns & \begin{minipage}[t]{10.2cm}
+An XML message with a success or failure value.
+
+Example request:\\
+\lstinline[language=XML]!http://localhost:8080/mimir-cloud/a4300d00-2dd1-4797-8eaa-e65b0c7d879b/search/close?queryId=a28656e2-18f4-4b58-b9d3-9a9378eb14d0!
+
+Example response:
+\begin{lstlisting}[language=XML]
+<?xml version="1.0"?>
+<message xmlns='http://gate.ac.uk/ns/mimir'>
+  <state>SUCCESS</state>
+</message>
+\end{lstlisting}
+
+Example failure (using the ID for an already closed query):
+\begin{lstlisting}[language=XML]
+<?xml version="1.0"?>
+<message xmlns='http://gate.ac.uk/ns/mimir'>
+  <state>ERROR</state>
+  <error>Query ID a28656e2-18f4-4b58-b9d3-9a9378eb14d0 not known!</error>
+</message>
+\end{lstlisting}
+\end{minipage}\\
+\hline
+\end{longtable}
+
+% Restore normal listings mode
+\lstnormal
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{The Web UI Example User Interface}\label{sec:search:gus}
+
+The Web UI search tool is a browser-based search interface intended to serve as
+a platform for experimentation with a \Mimir\ index, and as a demonstration of
+the capabilities of the \Mimir\ framework and API.  It is written using the
+Google Web Toolkit, and the source code is included in the \Mimir\ Grails
+plugin.
+
+In the {\tt mimir-cloud} web application with its default URL mappings, the Web
+UI interface for an index in searching mode is available at\\
+\verb!http://localhost:8080/mimir-cloud/{index ID}/search/index!.  The initial
+page, shown in figure~\ref{fig:gus:front-page}, provides a text area into which
+you can type queries in the \Mimir\ query language.  It provides auto-completion
+for annotation types and features (by asking the index what types it was
+configured with when it was created). Clicking the Search button starts a search
+on the server.
+
+\begin{figure}[tbp]
+\begin{center}
+\includegraphics[scale=0.5]{img/web-ui-frontpage}
+\caption{Front page of the Web UI user interface}
+\label{fig:gus:front-page}
+\end{center}
+\end{figure}
+
+Hits are shown below the search box, as shown in figure~\ref{fig:gus:results},
+with the hit text highlighted in bold and with three tokens of left and right
+context.  The document title is a link, in this example to the original
+document as the index was created with the ``Document URIs are external links''
+option.  The ``cached'' link shows \Mimir's cached copy of the document, with
+all the hits from that document highlighted in red.  For indexes where the
+document URIs are not external links the document title would link directly to
+the cached version and there would be no separate ``cached'' link.
+
+\begin{figure}[tbp]
+\begin{center}
+\includegraphics[scale=0.5]{img/web-ui-results}
+\caption{Web UI search results page}
+\label{fig:gus:results}
+\end{center}
+\end{figure}
+
+At the bottom of the page is a row of pagination links
+(figure~\ref{fig:gus:pagination}).
+
+\begin{figure}[tbp]
+\begin{center}
+\includegraphics[scale=0.5]{img/web-ui-pagination}
+\caption{Web UI pagination links for a large search}
+\label{fig:gus:pagination}
+\end{center}
+\end{figure}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Embedding \Mimir\ in a Grails Application}
+\label{sec:search:grails}
+
+Both the XML web service and the Web UI interface ultimately use a Grails
+service provided by the \Mimir\ plugin to search their indexes.  If you install
+the \Mimir\ plugin into your own Grails application this service will be your
+primary entry point to make use of \Mimir\ functionality, so this section
+explains what you need to know to use it effectively.
+
+The {\tt searchService} is a normal Grails service which can be autowired into
+your own services, controllers, etc.  The service itself is very simple,
+offering only the following methods:
+
+\bde
+\item[postQuery(index, queryString)] start running a query against the given
+  index.  The index can be specified either as a string containing the indexId
+  (the last component of the index URL, typically a UUID) or as an {\tt Index}
+  domain object (the database object representing a local, remote or federated
+  index).  Returns a {\em query ID} string.
+\item[getQueryRunner(queryId)] retrieves the {\tt QueryRunner} for the given
+  running query ID.  {\tt QueryRunner} is the interface through which you can
+  interact with the running query.
+\item[closeQueryRunner(queryId)] indicates that the given query runner is no
+  longer required.  It is important to call this method when you have finished
+  with a query runner, as each runner owns resources such as background threads
+  which need to be properly cleaned up.
+\ede
+
+Once a query has been started, its {\tt QueryRunner} provides access to the
+statistics, the hits themselves, and the text in the matched documents.  The
+most important methods are summarised below, but for full details you should
+look at the interface definition itself, in the {\tt gate.mimir.search} package
+of {\tt mimir-core}.
+
+\bde
+\item[getDocumentsCount()] Gets the number of result documents that have been 
+  found. While the query has not yet finished running, this method returns
+  $-1$.
+\item[getDocumentsCurrentCount()] Gets the number of distinct documents that
+  have so far been found to contain hits. This number may increase at any time
+  while the query is currently active. Once the query completes, this method
+  returns the same value as {\tt getDocumentsCount}.
+\item[getDocumentHits(rank)] Gets the details for the hits found inside a given
+  document. The document is specified by its rank (the position in the list of
+  result documents). The value supplied for the {\tt rank} parameter must be
+  between $0$ (inclusive) and the value returned by {\tt getDocumentsCount()}
+  (exclusive). The return value from this method is a list of {\tt Binding}
+  objects, each representing one hit.
+\item[getDocumentID(rank)] Gets the ID in the underlying index of the
+  $n$th document that matched this query. This ID is needed when deleting
+  documents from the index.
+\item[getDocumentTitle/URI(rank)] Gets metadata about the document with the
+  given rank.
+\item[getDocumentText(rank, start, length)] Gets the text of the document with
+  the given rank, starting at the {\em start}th token and extending for
+  {\em length} tokens.  The return value is a pair of parallel string arrays,
+  one containing the text of the tokens and the other containing the text
+  between each token and the following one.
+\item[renderDocument(rank, Appendable)] Render the document content, with hits
+  highlighted, using the document renderer configured for the index.  The
+  content is written to the specified Appendable (a StringBuilder, Writer,
+  etc.).
+\ede
+
+The {\tt getDocumentHits()} method returns a list of {\tt Binding} objects,
+which provide several methods, the most important ones being 
+{\tt getTermPosition()} (the offset of the first token covered by the hit) and 
+{\tt getLength} (the number of tokens it covers).
+
+\section{Ranking of Results}
+\label{sec:search:rank}
+
+Starting with version $4.0$, \Mimir{} supports the ranking of results. This
+means that a scoring algorithm is applied to assess the relevance of each
+returned document and that documents are returned in decreasing order of their
+scores. To support this, \Mimir{} will need to execute the query twice: once to
+calculate the scores, and a second time to collect the actual hits.
+Consequently, the query execution will be a bit slower when using ranking.
+ 
+\subsection{Configuring Ranking}
+
+Each searchable index can be configured to use a scorer. When initially created,
+all indexes have scoring disabled. This can be changed from the admin interface,
+by editing the index configuration, as shown in Figure~\ref{fig:config-scorer}.
+
+\begin{figure}
+\begin{center}
+\includegraphics[scale=0.4]{img/index-config-scorer}
+\caption{Configuring a Scorer}
+\label{fig:config-scorer}
+\end{center}
+\end{figure}
+
+If the provided scoring algorithms are not suitable for your needs, you can add
+new ones as discussed in Section~\ref{sec:extend:scorers}.

@@ -1,0 +1,339 @@
+The standard semantic annotation helpers provided by \Mimir\ are adequate for
+many use cases, but if your application needs more functionality that they
+cannot provide it is easy to add your own custom helper implementations using a
+plugin mechanism.  This process is described in
+section~\ref{sec:extend:helpers}.  Similarly, the basic \Mimir\ cloud
+application shows a simple way to use the \Mimir\ Grails plugin, but it provides
+no other features.  If you have different requirements, you can install the
+\Mimir\ plugin into your own custom Grails application, as described in
+section~\ref{sec:extend:customapp}.
+
+\section{Creating New Semantic Annotation Helpers}\label{sec:extend:helpers}
+
+{\em Semantic annotation helpers} (SAHs) are the mechanism that \Mimir\ uses to
+store information about annotations and allow this information to be queried at
+search time.  A SAH is associated with a particular annotation type in the
+\Mimir\ index configuration, and performs two functions:
+
+\bde
+\item[During indexing] for each annotation of the relevant type, store
+  information about that annotation in some persistent form and return to
+  \Mimir\ one or more URIs that represent that annotation.  These URIs are
+  included in the main MG4J index and associated with the location
+  in the document where the annotation was found.
+\item[During searching] given a set of feature value constraints, use the
+  persistent store created during indexing to determine the URIs associated
+  with annotations that satisfy the constraints.
+\ede
+
+Conceptually, SAH implementations can be divided into two types.
+{\em Generic} helpers are those that can index any annotation types and
+features, and {\em special-purpose} helpers are those that are designed to work
+with specific types of annotation.  There are two generic SAH implementations
+provided with \Mimir\ by default.  You would create a new generic SAH
+implementation if you wanted to store annotation data in a different underlying
+storage format.  \Mimir\ provides one example special-purpose SAH for
+Measurement annotations, which can serve as a template for how to implement
+your own helpers for other annotation types.
+
+\subsection{The {\tt SemanticAnnotationHelper} Interface}
+
+The {\tt gate.mimir.SemanticAnnotationHelper} interface is the contract that
+all helpers must implement.  It specifies three groups of methods that must be
+implemented:
+
+\subsubsection*{Lifecycle Methods}
+
+The interface includes init/close lifecycle methods, taking an {\tt MimirIndex}
+parameter. The MimirIndex object provides access to an {\tt IndexConfig} object
+which defines the configuration of the index, including the location of the
+index files on disk, and provides a mutable ``context'' map that can be used to
+share objects among the various SAH objects.  The {\tt init} method is called by
+\Mimir\ when the index is opened, before any other requests are passed to the
+helper, and the corresponding {\tt close} method is called when the index is
+shut down.
+
+\subsubsection*{Indexing Methods}
+
+When indexing annotations \Mimir\ calls the following methods:
+
+\bde
+\item[documentStart(document)] Called when the indexer starts processing a
+  particular document to allow the helper to perform any per-document setup
+  tasks.  This method is guaranteed to be called once per document, before any
+  calls to getMentionUris.
+\item[getMentionUris(annotation, length, indexer)] Called once for each
+  semantic annotation of this helper's type in the document.  The helper is
+  expected to use the annotation's length (in tokens) and feature values to
+  determine the relevant URI or URIs that represent this annotation, and return
+  them. 
+\item[documentEnd()] Called after all the annotation for a particular document
+  have been processed.
+\ede
+
+These methods are always called from a single thread, as long as the same 
+helper object is not used for more than one annotation type.
+
+Note that the annotation length passed to {\tt getMentionUris} is measured in
+{\em tokens}, not characters.  Because \Mimir\ operates on streams of tokens,
+semantic annotations that partially overlap a token will be considered by
+\Mimir\ to cover the whole token.  I.e. given the hypothetical example:
+
+\begin{minipage}{\textwidth}
+\begin{verbatim}
+... started on 10/05/1987 by John Smith ...
+    ------- -- -- -- ---- -- ---- -----
+\end{verbatim}
+\end{minipage}
+
+where tokens are represented by \verb|---|, an annotation that covers just the
+``87'' would be indexed as if it covered the whole ``1987'' token.
+
+\subsubsection*{Search Methods}
+
+The final method in the interface is {\tt getMentions(annotationType,
+constraints, queryEngine)}.  This method is called by \Mimir\ when searching
+for annotations, and the helper must use its stored data to determine all the
+possible mention URIs that satisfy the provided constraints, and return them
+along with their lengths (in tokens) as provided to {\tt getMentionUris} when
+the annotations were indexed.
+
+There is a second overloading of this method specified in the interface which
+is a convenience for callers when all the constraints are simple feature value
+equality constraints, but generally implementers of new SAH types can ignore
+this as \Mimir\ provides an abstract base class that converts the Map form of
+constraints into the more general List$<$Constraint$>$ form and calls the other
+method.
+
+The {\tt getMentions()} methods may be called from multiple threads at the same
+time, so implementations should be thread-safe.
+
+\subsection{Abstract Base Classes}
+
+\Mimir\ provides an abstract class {\tt AbstractSemanticAnnotationHelper}
+which, as described above, implements the Map version of {\tt getMentions} in
+terms of the List$<$Constraint$>$ version, and also provides empty
+implementations of {\tt documentStart} and {\tt documentEnd}.  As well as this,
+it provides accessor methods to access the list of feature names of each of the
+five types (nominal, integer, float, text and URI) that a particular helper
+object supports.  {\tt AbstractSemanticAnnotationHelper} enjoys special support
+in the \Mimir\ Grails plugin, allowing clients to determine what feature names
+an index supports for each annotation type whose helper extends
+{\tt AbstractSemanticAnnotationHelper}.  All the standard helper
+implementations provided with \Mimir\ extend this base class.
+
+Special-purpose helpers for particular annotation types typically operate by
+mapping the features of their target annotations and/or the feature constraints
+in a query into a different set of features or constraints which can then be
+handled by a generic helper.  The Measurement helper described in
+section~\ref{sec:plugins:measurements} operates in this way.  To support
+this pattern, \Mimir\ provides an abstract
+{\tt DelegatingSemanticAnnotationHelper} which implements all the SAH interface
+methods to simply delegate to another helper instance.  Subclasses can then
+override the methods as appropriate to map their features or constraints into
+terms that the underlying helper can understand and then call the {\tt super}
+method to pass these parameters on to the delegate.
+
+{\tt DelegatingSemanticAnnotationHelper} extends
+{\tt AbstractSemanticAnnotationHelper} so it advertises the features it
+supports in the usual way.  However it is important to note that the various
+\verb|get*FeatureNames| methods of the delegating helper do {\em not} call
+their counterparts in the delegate, which allows a delegating helper to
+advertise different features from those supported by its delegate.
+
+\subsubsection{The SAH lifecycle}
+
+Semantic annotation helper objects go through a specific lifecycle in \Mimir.
+When creating a new index for indexing, the helpers defined for each semantic
+annotation type are instantiated by calling their constructors
+from the Groovy DSL (see the measurements example below).
+Once instantiated, the {\tt init(Indexer)} methods of each helper in turn are
+called (one after the other, in a single thread, so if you are sharing objects
+among your helpers through the context you can be sure that you have exclusive
+access to the context map during the call to your init method).
+
+The actual indexing process takes place in several threads in a pipelined
+manner.  When a document arrives for indexing it is first processed by the
+token indexer (to index the token features), then the semantic indexers
+specified by the {\tt index \{ \ldots\ \}} blocks in the DSL in turn.  Each
+indexer operates in its own thread, with documents passing from one to the next
+via queues.  So each document is only processed by one thread at a time but
+under load you may have the token indexer dealing with document 3 at the same
+time as semantic indexers are dealing with documents 2 and 1.
+
+When indexing is complete the helpers' {\tt close(Indexer)} methods are called
+(again, in sequence in one thread).  The index is now closed and the SAH
+objects can be garbage collected.
+
+The index configuration, including all the SAH objects, is serialised to XML
+using XStream (\url{http://xstream.codehaus.org}). Therefore it is important to
+mark as \lstinline!transient! any fields of your helper class that should not be
+serialised (e.g. temporary in-memory caches, etc.).
+
+When an index is opened for searching the XML configuration is deserialised to
+re-create the helper objects, and their {\tt init(QueryEngine)} methods are
+called.  Note that as with Java object serialisation XStream does {\em not}
+call object constructors when de-serialising, so any initialisation must happen
+in the init method or in a {\tt readResolve} method, and not in the
+constructor.
+
+Annotation queries result in calls to the relevant helper's {\tt getMentions}
+method, which has been discussed in detail above.
+
+Finally, when the index is shut down the {\tt close(QueryEngine)} methods of
+the helpers are called in sequence.
+
+\subsection{Packaging New Helper Types for Use with \Mimir}
+\label{sec:extend-package-plugins}
+
+To create a new helper type and make it available to \Mimir\ you need to first
+write your Java class that implements {\tt SemanticAnnotationHelper}, typically
+via one of the abstract base classes.  To make your helper available to \Mimir\
+requires a couple of extra steps.
+
+Helper implementations are loaded into \Mimir\ using the standard GATE CREOLE
+plugin mechanism.  The helper class or classes must be packaged up into a JAR
+file which is placed in a directory containing a simple {\tt creole.xml} file.
+\begin{lstlisting}[language=XML]
+<CREOLE-DIRECTORY>
+  <JAR>my-plugin.jar</JAR>
+</CREOLE-DIRECTORY>
+\end{lstlisting}
+
+This directory is now a CREOLE plugin that can be loaded into \Mimir, for
+example by using the configuration options described in
+Section~\ref{sec:admin:config}.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Registering new Scorers}
+\label{sec:extend:scorers}
+
+The set of scoring algorithms made available in the admin interface is specified
+in the application configuration file (described in
+Section~\ref{sec:admin:config}). The default configuration includes the
+following options:
+\begin{lstlisting}[language=Java]
+scorers.'Count Scoring' = {
+  new DelegatingScoringQueryExecutor(new CountScorer())
+}
+scorers.'TF.IDF' = {
+  new DelegatingScoringQueryExecutor(new TfIdfScorer())
+}
+scorers.'BM25' = {
+  new DelegatingScoringQueryExecutor(new BM25Scorer())
+}
+scorers.'Hit Length Scoring' = {
+  new BindingScorer()
+}
+\end{lstlisting}
+
+Each declaration maps a Groovy closure to the name of a scorer. The closure must
+return an object implementing the
+\lstinline!gate.mimir.search.score.MimirScorer! interface, which itself extends
+the MG4J interface \lstinline!it.unimi.dsi.mg4j.search.score.DelegatingScorer!.
+
+\Mimir{} provides the
+\lstinline!gate.mimir.search.score.DelegatingScoringQueryExecutor! class which
+can be used to wrap one of the scorer implementations provided by MG4J. If none
+of those are suitable, you can write your own custom implementations and make
+them available to \Mimir{} in the form of a GATE CREOLE plugin. This will ensure
+the new classes are added to the classpath and can be found by the system. See
+Section~\ref{sec:extend-package-plugins} for a description of how to declare new
+plugins, and Section~\ref{sec:admin:config} for information about loading
+additional plugins.
+ 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Embedding \Mimir\ in a Custom Grails Application}
+\label{sec:extend:customapp}
+
+The {\tt mimir-cloud} Grails application provided with \Mimir\ provides access
+to the functionality of the \Mimir\ Grails plugin but is deliberately kept
+simple. For more complex needs, you can install the \Mimir\ plugin into a custom
+Grails application.
+
+\subsection{Installing the \Mimir\ Plugin}
+
+The \Mimir\ plugin is installed like any other Grails plugin, by running
+{\tt grails package-plugin} in the {\tt mimir-web} directory to
+create a plugin zip file and then
+{\tt grails install-plugin grails-mimir-web-\{version\}.zip} in your
+application's base directory to install the plugin into your application.  On
+installation the plugin adds a number of files to the host application:
+
+\bde
+\item[grails-app/conf/MimirConfig.groovy] a default configuration file for
+  \Mimir\ settings, which can be customised as described in
+  section~\ref{sec:admin:config}.
+\item[grails-app/conf/MimirUrlMappings.groovy] a default set of URL mappings
+  for \Mimir\ controllers.  These are discussed in more detail below.
+\item[web-app/WEB-INF/gate-home] a default GATE home directory, containing user
+  and site configuration files and the default query tokeniser application, as
+  required by the template configuration file.
+\ede
+
+\subsection{URL Mappings}
+
+The standard URL mappings for \Mimir\ adhere to the following conventions:
+\bit
+  \item All administrative actions have URLs that start with {\tt /admin}. This
+  is intended to simplify the job of providing security via an external
+  mechanism, such as the default container-provided security defined by the
+  servlet specification.
+  \item The URLs for all actions referring to a given index have a common prefix
+  (by default {\tt /\{indexId\}/}). This is used to support remote access
+  through the {\tt mimir-client} library, which relies on a base URL to which it
+  adds known suffixes to access given functionality (e.g. the search actions
+  are all found under {\tt /\{indexId\}/search/\{actionName\}}). The
+  mimir-client library is used, for example, in the implementation of remote
+  indexes.
+\eit
+
+These default mappings may be modified, but the protocols used by client
+code to push documents into an index, to search using the XML API, and to
+interact with remote indexes all make assumptions about certain relative paths.
+Therefore, if you need to allow remote access via the {\tt mimir-client}
+library, then you must make sure that:
+
+\bit
+\item there is a URL prefix that is common to all actions provided by the
+  {\tt IndexManagementController} and the {\tt SearchController}. Let us call
+  this common prefix the {\tt \{indexUrl\}};
+\item all actions provided by the {\tt IndexManagementController} should be
+  published under {\tt \{indexUrl\}/manage/\{actionName\}};
+\item all actions provided by the {\tt SearchController} should be
+  published under {\tt \{indexUrl\}/search/\{actionName\}};
+\item all actions of the search controller must have {\tt parseRequest:true}; 
+\item the names of the actions in the controllers above must not be changed.
+\eit 
+
+\subsection{Security Considerations}
+
+There are a number of established and mature Grails plugins that implement user
+registration, authentication and security in various ways for Grails
+applications.  By design, the \Mimir\ plugin does not provide any
+security of its own, allowing it to integrate with any security solution. For
+production deployments you may wish to consider any or all of the following.
+
+\begin{itemize}
+\item Place your application behind an Apache HTTPD or other similar front-end
+  server, and proxy only those URLs that need to be public (/css, /gwt,
+  /images, /plugins, /\{yourindex\}/search, etc.)
+\item Install a security plugin such as spring-security-core or nimble, and
+  restrict the \Mimir\ pages to certain users.  For example the /admin pages
+  could be restricted to administrative users, the Web UI pages to registered
+  searchers, etc.  This is how the {\tt mimir-cloud} application is set up.
+\item If your \Mimir\ instance is a slave in a federated index, use firewall
+  rules or a Grails filter to restrict access to the */search URLs to only the
+  master \Mimir\ server.
+\end{itemize}
+
+Note that if you use user authentication on the XML search API or the remote
+protocol then you will need to modify the default client code to authenticate
+itself appropriately.  For example if you require HTTP basic authentication for
+the search or manage URLs then you will need to configure the master \Mimir\
+server that uses this as a remote to make it pass the relevant Authorization
+HTTP header.  The remote protocol uses the {\tt WebUtils} class in
+{\tt mimir-client} to make its HTTP calls, and there is a subclass of this
+class that is able to provide basic authentication headers, you can wire this
+in by overriding the definition of the webUtilsManager Spring bean supplied by
+the \Mimir\ plugin -- see the plugin source code for full details.

@@ -1,0 +1,100 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% mimir.tex
+%
+% This document describes the \Mimir\ indexing and search framework.
+%
+% $Id$
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass[10pt, a4paper, twoside]{report}
+\input{preamble}
+\newcommand{\Mimir}{M\'{i}mir}
+\input{mimir-version}
+\begin{document}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+%% Title Page
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+\thispagestyle{empty}
+\begin{titlepage}
+\setlength{\unitlength}{1mm}
+\begin{picture}(150, 0)
+\color{mimirblue}
+\linethickness{10mm}
+\put(0, 3){\line(1,0){125}}
+\put(1, 0){\textcolor{white}{\Huge \textsc{\textbf{\Mimir}}}}
+\put(62, 4){\textcolor{white}{\textbf{\textsc{Multi-Paradigm
+Information Management}}}}
+\put(92, 0){\textcolor{white}{\textbf{\textsc{Index and Repository}}}}
+\end{picture}
+
+\vspace\fill
+\begin{center}
+{\Huge \textsc{\Mimir{} User Guide}}
+
+\vspace{30mm}
+{\Large Valentin Tablan \hspace{1cm} Ian Roberts}
+
+
+
+\end{center}
+
+\vspace\fill
+\begin{picture}(150, 0)
+\color{mimirblue}
+\linethickness{10mm}
+\put(0, 3){\line(1,0){125}}
+\put(1, 4){\textcolor{white}{\textbf{\textsc{\mimirversion}}}}
+\put(1, 0){\textcolor{white}{\textbf{\textsc{\today}}}}
+\put(85, 4){\textcolor{white}{\textbf{\textsc{\copyright\
+University of Sheffield}}}}
+\end{picture}
+\end{titlepage}
+
+\thispagestyle{empty}
+\cleardoublepage
+
+\setcounter{page}{1}
+\setcounter{tocdepth}{2}
+\tableofcontents
+\cleardoublepage
+
+\pagestyle{fancy}
+\fancyhead{} %clear all headings
+\fancyhead[RO,LE]{\thepage}
+\fancyhead[LO]{\textsc{\nouppercase{\leftmark}}}
+\fancyhead[RE]{\sc \Mimir\ User Guide}
+\fancyfoot{}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% main %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{Introduction}\label{sec:intro}
+\input{introduction}
+%\chapter{Changes}\label{sec:changes}
+%\input{changes}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Quick Start}\label{sec:quickstart}
+\input{quickstart}
+
+\chapter{Installing and Managing \Mimir}\label{sec:admin}
+\input{admin}
+\chapter{Indexing Documents with \Mimir}\label{sec:indexing}
+\input{indexing}
+\chapter{Searching \Mimir\ Indexes}\label{sec:searching}
+\input{searching}
+\chapter{Standard \Mimir\ Plugins}\label{sec:plugins}
+\input{plugins}
+\chapter{Extending and Customising \Mimir}\label{sec:extend}
+\input{extending}
+\chapter{Additional Tools}\label{sec:tools}
+\input{tools}
+
+\appendix
+\chapter{Change Log}\label{sec:changes}
+\input{changes}
+
+\end{document}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

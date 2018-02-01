@@ -1,0 +1,368 @@
+\Mimir\ uses the GATE Embedded {\em CREOLE plugin} mechanism to load semantic
+annotation helper classes.  A number of plugins are supplied by default with
+the \Mimir\ distribution, and those plugins are described in this chapter.
+Information on how to create new plugins to provide user-defined helper classes
+can be found in section~\ref{sec:extend:helpers}.
+
+\section{The {\tt db-h2} Plugin}\label{sec:plugins:db}
+
+The {\tt db-h2} plugin a plugin that provides a {\em generic} semantic
+annotation helper implementation that can be configured for any annotation type
+with any features.  The helper provided by {\tt db-h2} uses an embedded
+relational database engine (\url{http://www.h2database.com/}) to store the
+annotation data, and generally provides the best performance of the standard
+generic helpers.
+
+\lstinline!gate.mimir.db.DBSemanticAnnotationHelper! is the helper class
+provided by the {\tt db-h2} plugin.  It has a constructor that takes a
+{\tt Map} of configuration parameters, and Groovy provides special ``named
+argument'' support for {\tt Map}-valued method and constructor parameters,
+allowing the following idiom in the index template DSL:
+\begin{lstlisting}[texcl, breaklines, breakindent=150pt]
+// note the ``import X as Y'', which is another Groovy feature to create an
+// alias for an imported class name
+import gate.mimir.db.DBSemanticAnnotationHelper as DefaultHelper
+// \ldots
+semanticAnnotations = {
+  index {
+    annotation helper:new DefaultHelper(annType:'Person',
+      nominalFeatures:["gender", "title"], textFeatures:["name"]))
+  }
+}
+\end{lstlisting}
+
+The supported constructor arguments are:
+\bde
+\item[mode:] whether to index actual GATE annotations and their features, or to
+  index a single ``virtual'' annotation spanning the whole document from
+  document-level features.  The value must be either \verb!Mode.ANNOTATION!
+  (the default) or \verb!Mode.DOCUMENT!, where \verb!Mode! is the enum type
+  \verb!gate.mimir.SemanticAnnotationHelper.Mode!
+\item[annType:] the annotation type which the helper is to process, or for
+  document-mode helpers, the ``virtual'' annotation type under which the
+  specified features will be indexed.
+\item[nominalFeatures:] the names of the features to be indexed that have
+  nominal values. An annotation feature is said be nominal if the range of
+  possible values is clearly defined and limited in size. There is no hard rule
+  regarding the size of the set of permitted values, but, for optimal results,
+  this should not exceed a few tens of values.
+\item[integerFeatures:] the names of the features to be indexed that have
+  integer values (i.e. values that can be converted to a Java {\tt long}
+  value).
+\item[floatFeatures:] the names of the features to be indexed that have
+  floating-point numeric values (i.e. values that can be converted to a Java
+  {\tt double} value).
+\item[textFeatures:] the names of the features to be indexed that have
+  arbitrary text values (as opposed to the nominal case of a fixed list of
+  possible values).
+\item[uriFeatures:] the names of the features to be indexed that have
+  URIs as values.
+\item[indexNulls:] (boolean, defaults to \verb!true!) if this is set to false
+  then instances that have no values for {\em any} of the specified features
+  will not be indexed at all.  This is something that generally only makes
+  sense for document-mode helpers, when you want to index a feature that is
+  only present on some documents.  Setting \verb!indexNulls:false! allows you
+  to use \verb!OVER {AnnType}! queries to restrict searches to only the
+  documents that have that feature.
+\ede
+
+The DB-based helper does not distinguish between text- and URI-valued features,
+indexing both types in the same way, but it accepts both kinds as arguments.
+
+\section{The {\tt measurements} Plugin}\label{sec:plugins:measurements}
+
+The GATE {\tt Tagger\_Measurements} plugin, introduced in GATE 6.1, is able to
+recognise many different kinds of measurement expressions in text.  It
+normalises the value and unit of each measurement into the SI system of
+measurements and stores these values as features of the Measurement annotation.
+For example, the text ``45 cm'' would be annotated with a normalised unit of
+metres and a normalised value of 0.45, the text ``18 in'' would also be
+normalised to metres, in this case with a normalised value of 0.4572.
+
+The \Mimir\ {\tt measurements} plugin provides a SAH that implements the same
+normalisation on queries.  It processes queries for a ``synthetic'' feature
+called ``spec'' which represents a measurement specification in a controlled
+language and converts constraints on this feature into the corresponding
+constraints on the real normalised value and unit features that have been
+indexed.  For example, a search for \{Measurement spec="1 to 3 feet"\} would be
+treated as a query for measurements whose normalised unit is metres and whose
+normalised value is between 0.3048 and 0.9144, which would match both the ``45
+cm'' and ``18 in'' examples above.
+
+\subsection{Configuring the Measurements SAH}
+
+To use the measurements helper you need to first ensure that the
+{\tt measurements} plugin is loaded into your \Mimir\ instance, then create an
+index template that specifies an instance of the helper:
+\begin{lstlisting}[texcl]
+import gate.mimir.measurements.MeasurementAnnotationHelper
+
+// \ldots
+semanticAnnotations = {
+  index {
+    // Measurement helper with default settings
+    annotation helper:new MeasurementAnnotationHelper(
+          delegateHelperType:DefaultHelper)
+  }
+}
+\end{lstlisting}
+
+Note that the measurement helper does not need any ``annType'' or
+``{\em xxx}Features'' parameters, as it is hard-coded to work only for
+annotations that are produced by the measurement tagger PR.  However the
+constructor does take a {\tt Map} with other named arguments:
+\begin{lstlisting}[firstnumber=6,texcl]
+    // Example of how to configure a custom ``units'' file
+    annotation helper:new MeasurementAnnotationHelper(
+          delegateHelperType:DefaultHelper,
+          unitsFile:'resources/americanUnits.dat',
+          locale:'en_US')
+\end{lstlisting}
+
+The following parameters are supported:
+\bde
+\item[delegateHelperType (required)] a {\tt Class} object representing the type
+  of generic helper that the Measurements helper should delegate to.  This
+  class must provide a 6-argument constructor taking the annotation type (a
+  String) and five String arrays for the nominal, integer, float, text and URI
+  feature names respectively.
+\item[unitsFile] the location of the {\tt units.dat} file used to configure the
+  measurements parser.  If not specified, a default file provided with the
+  {\tt measurements} plugin is used.  This value can be an absolute URL
+  (file:/path/to/units.dat) or a relative path which will be resolved against
+  the {\tt measurements} plugin directory.
+\item[commonWords] the location of the common words file used by the
+  measurements parser.  As with the {\tt unitsFile} parameter, if omitted a
+  default file bundled with the plugin is used.
+\item[locale] the locale under which the measurements will be parsed.  Defaults
+  to ``en\_GB'' if unspecified.
+\item[encoding] the character encoding used to read the configuration files.
+  Defaults to ``UTF-8'' if unspecified.
+\item[annType] the annotation type, if something other than the default of
+  ``Measurement''
+\ede
+
+The measurements SAH is pre-configured with the feature names that the
+measurements tagger produces, and attempting to specify any feature name
+parameters such as nominalFeatures will cause an error.
+
+\subsubsection{Measurements helper implementation}
+
+The {\tt MeasurementAnnotationHelper} extends the
+{\tt DelegatingSemanticAnnotationHelper} base class described above.  It does
+not add any behaviour at indexing time, simply passing all the annotations
+through directly to its delegate.  However it overrides the {\tt getMentions}
+search method to support the ``spec'' feature.
+
+When a query including a spec feature constraint is received, the helper parses
+this spec using the measurements parser to obtain a normalised unit and value
+or values for the measurement sought.  It then constructs a number of new
+constraint sets that match annotations compatible with the spec and then for
+each of these alternatives, runs these constraints in combination with the
+other non-spec constraints of the original query against the delegate helper.
+The final set of URIs returned is the union of the results obtained from the
+delegate for all the alternative reformulations of the spec constraint.
+
+As well as being useful in its own right for Measurement annotations, the
+measurements helper serves as an example of how to implement your own
+special-purpose helper based on the delegating base class.  Feel free to use it
+as a template for your own helper implementations.
+
+\section{The {\tt sparql} Plugin}\label{sec:plugins:sparql}
+
+The {\tt sparql} plugin provides a semantic annotation helper that wraps
+another helper, adding flexible {\em semantic query} support.  It is intended
+to be used with annotations that have one or more URI-valued features whose
+values refer to entities in an external knowledge base (accessible at a
+standard {\em SPARQL endpoint}).  The SPARQL helper has no effect at indexing
+time, simply delegating all calls through to the underlying helper, but at
+search time it allows queries for the synthetic feature ``sparql''.  This
+feature value is taken to be a SPARQL ``SELECT'' query, which is posted
+to the configured SPARQL endpoint.  The variables in the SELECT query must
+correspond to the names of features that have been indexed by the underlying
+helper, and each row in the result set becomes a standard \Mimir\ query to the
+underlying helper.  Any annotations that match any of these new queries will be
+treated as a match for the {\tt sparql} constraint.  This process is described
+in detail below.
+
+For example, given a helper configured for the public DBPedia endpoint
+{\tt http://dbpedia.org/sparql}, the following \Mimir\ query:
+\begin{verbatim}
+{Person sparql = "SELECT DISTINCT ?inst WHERE {
+  ?inst <http://dbpedia.org/ontology/birthPlace>
+    <http://dbpedia.org/resource/Sheffield> }"}
+\end{verbatim}
+would search for all Person annotations that have an ``inst'' feature
+containing the URI of an entity in DBpedia that represents a person born in
+Sheffield.
+
+
+\subsection{Creating a SPARQL Helper}
+
+The SPARQL semantic annotation helper class is called
+\lstinline!gate.mimir.sparql.SPARQLSemanticAnnotationHelper!.  It has a
+{\tt Map} constructor taking the following parameters:
+
+\bde
+\item[delegate (required)] the underlying semantic annotation helper that this
+  SPARQL helper should wrap.
+\item[sparqlEndpoint (required)] the address of the SPARQL endpoint that this
+  helper should use when making SPARQL queries.
+\item[queryPrefix] an optional prefix that will be prepended to the string
+  specified in the {\tt sparql} synthetic feature to form the actual SPARQL
+  query that will be sent to the endpoint.  Typically this would be used to
+  define appropriate namespace prefixes.
+\item[querySuffix] an optional suffix that will be appended to the end of the
+  SPARQL queries.  Thus the actual SPARQL query submitted to the endpoint is
+  {\em queryPrefix} + {\tt sparql} feature + {\em querySuffix}.
+\item[sparqlEndpointUser and sparqlEndpointPassword] username and password used
+  to authenticate to the SPARQL endpoint (only HTTP basic authentication is
+  supported).  May be omitted if your endpoint does not require authentication.
+\item[sparqlRequestMethod] the mechanism by which the query will be passed to
+  the endpoint.  This value is an {\tt enum} type
+  {\tt gate.mimir.sparql.RequestMethod} with three possible values:
+  \bde
+  \item[GET] (default) the query will be URL encoded and appended to the URL as
+    a parameter \verb!?query=...!
+  \item[POST\textunderscore{}ENCODED] the query will be URL encoded as in the GET case and sent
+    in a POST request with content type {\tt application/x-www-form-urlencoded}
+  \item[POST\textunderscore{}PLAIN] the query will be sent as-is as the body of a POST request
+    with content type {\tt application/sparql-query}
+  \ede
+\ede
+
+The helper also accepts the usual ``annType'' and ``{\em xxx}Features''
+parameters but these are not normally required -- if the delegate helper is a
+subclass of {\tt AbstractSemanticAnnotationHelper} (which is the case for all
+the standard helpers) then the SPARQL helper will take its feature names from
+the delegate, so the only time the features need to be specified explicitly for
+the SPARQL helper is if the delegate is a custom helper type that does not
+extend {\tt AbstractSemanticAnnotationHelper}.
+
+For example, the following configuration would set up a helper for Person
+annotations operating against DBpedia, to support the example query above:
+\begin{lstlisting}[texcl, breaklines, breakindent=150pt]
+import gate.mimir.db.DBSemanticAnnotationHelper as DBH
+import gate.mimir.sparql.SPARQLSemanticAnnotationHelper as SPARQLHelper
+import gate.mimir.sparql.RequestMethod as RM
+// \ldots
+semanticAnnotations = {
+  index {
+    annotation helper:new SPARQLHelper(
+        sparqlEndpoint:'http://dbpedia.org/sparql',
+        sparqlRequestMethod:RM.POST_ENCODED,
+        delegate:new DBH(annType:"Person", uriFeatures:['inst']))
+  }
+}
+\end{lstlisting}
+
+Alternatively, the helper could be configured with a queryPrefix to set up some
+useful namespace prefixes:
+\begin{lstlisting}[texcl, breaklines, breakindent=150pt]
+semanticAnnotations = {
+  index {
+    annotation helper:new SPARQLHelper(
+      sparqlEndpoint:'http://dbpedia.org/sparql',
+      sparqlRequestMethod:RM.POST_ENCODED,
+      queryPrefix:
+       'PREFIX rdfs:<http://www.w3.org/2000/01/rdf-schema#> \
+        PREFIX xsd:<http://www.w3.org/2001/XMLSchema#> \
+        PREFIX owl:<http://www.w3.org/2002/07/owl#> \
+        PREFIX rdf:<http://www.w3.org/1999/02/22-rdf-syntax-ns#> \
+        PREFIX dbo:<http://dbpedia.org/ontology/> \
+        PREFIX dbr:<http://dbpedia.org/resource/> ',
+      delegate:new DBH(annType:"Person", uriFeatures:['inst']))
+  }
+}
+\end{lstlisting}
+
+Note the backslashes which are a Groovy feature to permit a String literal to
+be broken across several lines, and also the trailing space before the closing
+quotation mark -- the helper simply concatenates the prefix, query and suffix
+without any additional space, so required spaces must be part of the prefix or
+suffix string itself.  This would allow the example query above to be rewritten
+more succinctly as:
+\begin{verbatim}
+{Person sparql = "SELECT DISTINCT ?inst WHERE {
+  ?inst dbo:birthPlace dbr:Sheffield }"}
+\end{verbatim}
+
+For annotation types that have only one URI-valued feature it may be desirable
+to include the ``\verb!SELECT DISTINCT ?inst WHERE { !'' in the prefix and add
+a suffix of ``\verb! }!'', which would reduce the query down to
+\begin{verbatim}
+{Person sparql = "?inst dbo:birthPlace dbr:Sheffield"}
+\end{verbatim}
+
+If your index template includes several ontology-based annotation types sharing
+the same SPARQL endpoint and prefixes then listing these in full for each
+annotation type will result in a large and unwieldy template.  However, since
+the index template is itself a Groovy script it is possible to declare methods
+to factor out the common code.  Method declarations must be placed
+{\em outside} the {\tt semanticAnnotations} block:
+\begin{lstlisting}[texcl, breaklines, breakindent=150pt]
+import gate.mimir.db.DBSemanticAnnotationHelper as DBH
+import gate.mimir.sparql.SPARQLSemanticAnnotationHelper as SPARQLHelper
+import gate.mimir.sparql.RequestMethod as RM
+
+def standardHelper(type) {
+  return new SPARQLHelper(
+      sparqlEndpoint:'http://dbpedia.org/sparql',
+      sparqlRequestMethod:RM.POST_ENCODED,
+      queryPrefix:
+       'PREFIX rdfs:<http://www.w3.org/2000/01/rdf-schema#> \
+        PREFIX xsd:<http://www.w3.org/2001/XMLSchema#> \
+        PREFIX owl:<http://www.w3.org/2002/07/owl#> \
+        PREFIX rdf:<http://www.w3.org/1999/02/22-rdf-syntax-ns#> \
+        PREFIX dbo:<http://dbpedia.org/ontology/> \
+        PREFIX dbr:<http://dbpedia.org/resource/> ',
+      delegate:new DBH(annType:type, uriFeatures:['inst']))
+}
+
+// \ldots
+semanticAnnotations = {
+  index {
+    annotation helper:standardHelper('Person')
+    annotation helper:standardHelper('Location')
+    annotation helper:standardHelper('Organization')
+  }
+}
+\end{lstlisting}
+
+\subsection{Format of SPARQL Queries}
+
+This section describes in more detail how the SPARQL queries relate to the
+annotations indexed by the underlying semantic annotation helper.  As a simple
+example we consider the query for people born in Sheffield:
+\begin{verbatim}
+{Person sparql = "SELECT DISTINCT ?inst WHERE {
+  ?inst dbo:birthPlace dbr:Sheffield }"}
+\end{verbatim}
+%
+The helper will submit the SPARQL query to its configured endpoint, and receive
+a response of the form:
+
+\begin{tabular}{|c|}
+\hline
+{\bf inst} \\
+\hline
+{\tt http://dbpedia.org/resource/Gordon\_Banks} \\
+{\tt http://dbpedia.org/resource/Michael\_Palin} \\
+{\tt http://dbpedia.org/resource/David\_Blunkett} \\
+\ldots \\
+\hline
+\end{tabular}
+
+This will then generate a series of queries to the underlying helper of the
+form:
+\begin{verbatim}
+{Person inst = "http://dbpedia.org/resource/Gordon_Banks"}
+{Person inst = "http://dbpedia.org/resource/Michael_Palin"}
+...
+\end{verbatim}
+and any annotation that matches any of these queries will be returned as a
+match for the {\tt sparql} constraint.
+
+The SPARQL query can bind more than one variable, and the values of the
+variable bindings can be RDF literals as well as URIs, they convert to queries
+on the underlying helper in the same way.

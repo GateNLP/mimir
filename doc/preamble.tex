@@ -1,0 +1,395 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Valentin Tablan 13/02/2002
+%
+% $Id: preamble.tex,v 1.8 2004/07/14 13:51:44 valyt Exp $
+%
+% This file is designed to be included at the begining of any latex document 
+% and handles things like pdf detection, tex4ht detection, notes command, 
+% paragraph spacing and indenting.
+%
+% 28/July/2003: consolidated GATE utils and TAO main.tex stuff here (Hamish).
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% PDF detection
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage{ifpdf}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% tex4ht detection
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newif\ifhtml
+\ifx\ifHtml\undefined
+  \htmlfalse          % we are not running tex4ht
+\else
+  \htmltrue           % we are running tex4ht
+\fi
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% packages
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% note that hyperref modifies many of the latex commands so it needs to be 
+% the last loaded package.
+
+% general packages
+\usepackage[english]{babel}
+\usepackage{lscape}
+\usepackage{longtable}
+\usepackage{setspace}
+\usepackage{color}
+\usepackage{fancyhdr}
+\usepackage{listings}
+\usepackage{longtable}
+\usepackage{txfonts}
+\usepackage{upquote}
+\usepackage[text={5in,8.5in}, hmarginratio=1:1, vmarginratio=1:1]{geometry}
+% packages with mode detection 
+\ifpdf
+  %PDF specific stuff
+  \usepackage[pdftex]{graphicx}
+  % prefer .pdf graphics if available
+  \DeclareGraphicsExtensions{.pdf,.png}
+  \usepackage{thumbpdf}
+
+  % this should be last!
+  \usepackage[
+    pdftex,
+    pdfborder=0,
+    pdftitle={},
+    pdfauthor={},
+    pdfsubject={},
+    pdfkeywords={},
+    pdfpagemode=None,
+    colorlinks=false,
+    urlcolor=black,
+    anchorcolor=black,
+    anchorcolor=black,
+    filecolor=black,
+    linkcolor=black,
+    citecolor=black,
+    hidelinks
+    ]{hyperref}
+\else
+  \ifhtml
+    % tex4ht specific stuff
+    \usepackage{graphicx}
+    \usepackage[colorlinks=false]{hyperref}
+    % force .png extension on includegraphics
+    \DeclareGraphicsExtensions{.png}
+  \else
+    % Latex specific stuff
+    \usepackage[dvips]{graphicx}
+
+    % this should be last!
+    \usepackage[hypertex, colorlinks=false]{hyperref}
+  \fi
+\fi
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% HTML support commands
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% some utility definitions of HTML commands using the hyperref package 
+% \htlink{target URL}{link text} - hypertext link
+\newcommand{\htlink}[2]{\href{#1}{#2}}
+\newcommand{\htlinkplain}[1]{\href{#1}{#1}}
+
+% latex commands that only appear in the HTML version
+\newcommand{\htlinkhtml}[2]{\href{#1}{#2}}
+\newcommand{\htlinkplainhtml}[1]{\href{#1}{#1}}
+\newcommand{\htlatexhtml}[1]{#1}
+
+% \htcode{code} - raw HTML code
+\newcommand{\htcode}[1]{}
+
+% \htlatex{code} - latex only code
+\newcommand{\htlatex}[1]{#1}
+
+% if we're tex4ht'ing, redefine the HTML commands to use tex4ht commands
+\ifhtml
+  \renewcommand{\htcode}[1]{\HCode{#1}}
+  \renewcommand{\htlatex}[1]{}
+\else
+  \renewcommand{\htlinkhtml}[2]{}
+  \renewcommand{\htlinkplainhtml}[1]{}
+  \renewcommand{\htlatexhtml}[1]{}
+\fi
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% notes commands 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% writes a small "note:" marker on the left margin of the note 
+\newcommand{\notes}[1]
+{
+\setlength{\unitlength}{1mm}
+\begin{picture}(0,0)(15, 0)
+\put(0,0) {\framebox{{\scriptsize {\sf {\bf note:}}}}}
+\end{picture}%
+{\sf{#1}}
+\begin{picture}(0,0)
+\put(0,0){\rule{.5\baselineskip}{.5\baselineskip}}
+\end{picture}%
+}
+
+% uncomment for final version.
+%%% \renewcommand{\notes}[1]{}
+
+% IF pdf mode is enabled it will create a PDF note (non printable)
+\newcommand{\pdfnote}[1]{
+  \ifpdf
+    \pdfannot         % generic annotation
+                      
+      width 10cm      % the dimension of the annotation can be controlled
+      height 0cm      % via <rule spec>; if some of dimensions in
+      depth  4cm      % <rule spec> is not given, the corresponding
+                      % value of the parent box will be used.
+    {                 
+      /Subtype /Text  % text annotation
+      %/Open true     % if given the text annotation opened by default
+      /Contents       % text contents
+        (#1)
+    }
+  \else
+  \notes{#1}
+  \fi
+}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% switches 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\textwidth 5in
+\textheight 8.5in
+
+%\oddsidemargin 0.1in
+%\evensidemargin 0.1in
+%\topskip 0.35in
+%\footskip 0.2in
+%\topmargin -1.1cm
+\tolerance=6000
+
+% paragraph break with no indent
+\setlength{\parindent}{0pt}
+
+% extra spacing between paragraphs
+\setlength{\parskip}{2ex}
+%\setlength{\parskip}{1ex plus 0.5ex minus 0.2ex}
+
+% number subsubsections in the TOC
+\setcounter{tocdepth}{3}
+
+% spacing
+\singlespacing
+%\onehalfspacing
+%\doublespacing
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% misc commands 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newcommand{\delete}[1]{}
+\newcommand{\omitted}[1]{{\small \sf =OMITTED=}}
+\newcommand{\thing}{book}
+
+\definecolor{cmdcol}{RGB}{0, 0, 128}
+\definecolor{mimirblue}{RGB}{0, 97, 147}
+\newcommand{\cmd}[1]{\textcolor{cmdcol}{\textbf{\texttt{#1}}}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% sectioning commands 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newcommand{\chapt}[1]{\section{#1}}
+\newcommand{\sect}[1]{\subsection{#1}}
+\newcommand{\subsect}[1]{\subsubsection{#1}}
+\newcommand{\subsubsect}[1]{{\bf #1}}
+\newcommand{\subsubsubsect}[1]{{\bf #1}}
+\newcommand{\chapthing}{section}
+\newcommand{\Chapthing}{Section}
+\newcommand{\chapthings}{sections}
+\newcommand{\Chapthings}{Sections}
+
+\renewcommand{\chapt}[1]{\chapter{#1}}
+\renewcommand{\sect}[1]{\section{#1}}
+\renewcommand{\subsect}[1]{\subsection{#1}}
+\renewcommand{\subsubsect}[1]{\subsubsection{#1}}
+
+\renewcommand{\chapthing}{chapter}
+\renewcommand{\Chapthing}{Chapter}
+\renewcommand{\chapthings}{chapters}
+\renewcommand{\Chapthings}{Chapters}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% compact itemize etc. 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% store the current value of parskip and allow resetting
+% via \resetparskip
+\newlength{\oldparskip}
+\setlength{\oldparskip}{\parskip} 
+\oldparskip=\parskip 
+\newcommand{\resetparskip}[0]
+{
+  \parskip=\oldparskip
+}
+
+% \bit, \eit - compact version of itemize
+% note that parskip is changed. To reset it use \resetparskip
+% (after any text following the list that's not a new paragraph)
+\newcommand{\bit}[0]
+{
+  \parskip=-4pt
+  \begin{itemize}
+  \itemsep=-3pt
+}
+\newcommand{\eit}[0]
+{
+  \end{itemize}
+  \resetparskip
+}
+
+% \ben, \een - compact version of enumerate
+% note that parskip is changed. To reset it use \resetparskip
+% (after any text following the list that's not a new paragraph)
+\newcommand{\ben}[0]
+{
+  \parskip=-4pt
+  \begin{enumerate}
+  \itemsep=-3pt
+}
+\newcommand{\een}[0]
+{
+  \end{enumerate}
+  \resetparskip
+}
+
+% \bde, \ede - compact version of description
+% note that parskip is changed. To reset it use \resetparskip
+% (after any text following the list that's not a new paragraph)
+\newcommand{\bde}[0]
+{
+  \parskip=-4pt
+  \begin{description}
+  \itemsep=-3pt
+}
+\newcommand{\ede}[0]
+{
+  \end{description}
+  \resetparskip
+}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% font size
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% font size - uncomment for standard print
+\newcommand{\nsmall}{\small}
+\newcommand{\nnormalsize}{\normalsize}
+\newcommand{\nlarge}{\large}
+
+% font size - uncomment for large print
+%\newcommand{\nsmall}{\normalsize}
+%\newcommand{\nnormalsize}{\Large}
+%\newcommand{\nlarge}{\Large}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% quotex - including quotes in documents
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% create the .qt aux file
+\newcommand{\qtinit}{
+  \newwrite\qtaux
+  \immediate\openout\qtaux=\jobname.qta
+  \immediate\write\qtaux{! \jobname.qta}
+}
+
+% record the name of a quotable file
+\newcommand{\qtpath}[1]{
+  \immediate\write\qtaux{qtpath: #1}
+}
+
+% include a quote
+\newcommand{\qt}[1]{
+  \newread\qtfile
+  \immediate\openin\qtfile=qt_#1.tex
+  \ifeof\qtfile
+    \immediate\closein\qtfile
+    \immediate\write\qtaux{quote: #1}
+  \else
+    \immediate\closein\qtfile
+    \input{qt_#1}
+  \fi
+}
+
+% commands re-defined by the quotes files
+\newcommand{\qtauthor}{}
+\newcommand{\qttitle}{}
+\newcommand{\qtdate}{}
+\newcommand{\qtquote}{}
+\newcommand{\qtpage}{}
+\newcommand{\qtall}{}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%% Support for including code listings %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Generic settings
+
+\lstset{
+  language=Java,
+  keywordstyle=\color{blue}\bfseries,
+  commentstyle=\color[rgb]{0,0.5,0}\it,
+  stringstyle=\color[rgb]{1,0,1},
+  showstringspaces=false,
+  rulesepcolor=\color[rgb]{0.8,0.8,0.8},
+  captionpos=b
+}
+
+% Normal size for listings
+\newcommand{\lstnormal}{
+\lstset{
+  basicstyle=\footnotesize\ttfamily,
+  numbers=left, 
+  numberstyle=\tiny,
+  stepnumber=1,
+  numbersep=10pt,
+  xleftmargin=20pt,
+  xrightmargin=5mm,
+  frame=shadowbox,
+  frameround=ffff,
+  framesep=6pt,
+  framexleftmargin=5mm
+}
+}
+
+% Define a compact listings mode
+\newcommand{\lstcompact}{
+\lstset{
+  basicstyle=\scriptsize\ttfamily,
+  numbers=none, 
+  xleftmargin=0pt,
+  frame=none,
+  breaklines=true
+}
+}
+
+% by default, we start with the normal size
+\lstnormal
+ 
+\usepackage{underscore}
+

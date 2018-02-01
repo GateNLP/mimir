@@ -1,0 +1,34 @@
+/@     1  @/import gate.creole.ANNIEConstants
+/@     2  @/import gate.mimir.SemanticAnnotationHelper.Mode
+/@     3  @/import gate.mimir.index.OriginalMarkupMetadataHelper
+/@     4  @/import gate.mimir.db.DBSemanticAnnotationHelper as DefaultHelper
+/@     5  @/import gate.mimir.util.DocumentFeaturesMetadataHelper
+/@     6  @/
+/@     7  @/tokenASName = ""
+/@     8  @/tokenAnnotationType = ANNIEConstants.TOKEN_ANNOTATION_TYPE
+/@     9  @/tokenFeatures = {
+/@    10  @/  string()
+/@    11  @/  category()
+/@    12  @/  root()
+/@    13  @/}
+/@    14  @/
+/@    15  @/semanticASName = ""
+/@    16  @/semanticAnnotations = {
+/@    17  @/  index {
+/@    18  @/    annotation helper:new DefaultHelper(annType:'Sentence')
+/@    19  @/  }
+/@    20  @/  index {
+/@    21  @/    annotation helper:new DefaultHelper(annType:'Person', nominalFeatures:["gender", "title"], textFeatures:["name"])
+/@    22  @/    annotation helper:new DefaultHelper(annType:'Location', nominalFeatures:["locType", "continent"])
+/@    23  @/    annotation helper:new DefaultHelper(annType:'Organization', nominalFeatures:["orgType"])
+/@    24  @/    annotation helper:new DefaultHelper(annType:'Date', integerFeatures:["normalized"])
+/@    25  @/    annotation helper:new DefaultHelper(annType:'Document', integerFeatures:["date"], mode:Mode.DOCUMENT)
+/@    26  @/  }
+/@    27  @/}
+/@    28  @/documentRenderer = new OriginalMarkupMetadataHelper()
+/@    29  @/documentFeaturesHelper = new DocumentFeaturesMetadataHelper("date","source","id", "type")
+/@    30  @/documentMetadataHelpers = [documentRenderer, documentFeaturesHelper]
+/@    31  @/
+/@    32  @/// miscellaneous options - these are the defaults
+/@    33  @///timeBetweenBatches = 1.hour
+/@    34  @///maximumBatches = 20

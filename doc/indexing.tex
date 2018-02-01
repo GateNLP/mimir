@@ -1,0 +1,515 @@
+\Mimir\ is designed to index semantically annotated documents. It accepts as
+input GATE documents\footnote{\url{http://gate.ac.uk/userguide/chap:corpora}}
+and produces a set of indexes as a result. The way the text and annotations of
+the input documents are converted into indexes is controlled through
+configuration options.
+
+\section{Configuring the Indexer}\label{sec:indexing:templates}
+
+In the \Mimir\ web interface, the configuration of a new index is represented
+by an {\em index template}.  This specifies:
+\begin{itemize}
+\item which annotation types and features to index
+\item which annotation sets contain these annotations
+\item (optionally) which document features should be indexed
+\item how to handle the document format and metadata
+\end{itemize}
+
+Index templates can be managed using the ``Click here to manage the index
+templates'' link at the bottom of the \Mimir\ front page.  An index template is
+specified in a structured ``domain specific language'' using Groovy ---
+Listing~\ref{lst:default-index-template} shows an example of the default
+template provided by the \Mimir\ Grails plugin.
+%
+% Define a new command for the default index template so we can slice it up
+% lower down
+%
+\newcommand{\defaultIndexTemplate}[1][]{{%
+  \lstset{morecomment=[is]{/@}{@/}}%
+  \lstinputlisting[breaklines, breakindent=150pt, #1]{default-index-config.txt}%
+}}%
+%
+\defaultIndexTemplate[float=htb,%
+    caption={The default index template provided with \Mimir},%
+    label=lst:default-index-template,%
+]
+
+{\newpage}
+The various sections of the template are as follows:
+
+\subsection*{Imports}
+\defaultIndexTemplate[linerange=1-5,firstnumber=1]
+
+The template can optionally start with import statements to import any Java
+classes that are used further on in the template.
+
+\subsection*{Token Definitions}\label{sec:indexing:tokens}
+\defaultIndexTemplate[linerange=7-13,firstnumber=7]
+
+The next section of the template deals with the {\em tokens} that \Mimir\ will
+base its index on.  \Mimir\ sees every document as a stream of tokens rather
+than a stream of characters, and all the annotations indexed by \Mimir\ are
+stored in terms of their starting and ending {\em tokens}, not character
+offsets.  Thus for \Mimir\ to work correctly it needs to know how to split up
+the document into tokens and what information to store about each token.  For
+this purpose it uses GATE annotations, and indexes the values of features on
+the annotations.
+
+The following options can be configured:
+\begin{description}
+\item[tokenASName] The name of the annotation set in which the token
+  annotations can be found (for example \lstinline!tokenASName = "mimir"!). To
+  use the default annotation set, which has no name, this may be left
+  unspecified, or explicitly set to the empty string: \lstinline!""!, or to
+  \lstinline!null! (without quotes).
+\item[tokenAnnotationType] The annotation type that should be used as tokens.
+  This entry is required, and can generally be simply set to the default
+  \lstinline!ANNIEConstants.TOKEN_ANNOTATION_TYPE! (with a suitable
+  \lstinline!import! at the top of the template).
+\item[tokenFeatures] A block of code giving the features from each token
+  annotation that should be indexed.
+\end{description}
+
+The {\em tokenFeatures} block should list the features to be indexed as shown
+in the example, each feature name followed by parentheses.  For advanced users
+an MG4J \lstinline!TermProcessor! instance may be provided inside these
+parentheses.  By default, if no term processors are specified, the {\em first}
+feature is converted to lowercase and the subsequent features are not modified.
+Since terms in a query are processed using the same processor as those in the
+index, this has the effect of making searches on the first feature
+case-insensitive, and searches on the other features case-sensitive. To stop
+any processing being done, you should supply a
+\lstinline!it.unimi.dsi.mg4j.index.NullTermProcessor! value, by specifying e.g.
+\lstinline!string(NullTermProcessor.getInstance())!, after including the
+relevant \lstinline!import! statement at the top.
+
+\subsection*{Semantic Annotations}\label{sec:indexing:helpers}
+\defaultIndexTemplate[linerange={15-19},firstnumber=15]
+
+The next section defines the {\em semantic annotations} that \Mimir\ will
+include in the index.  Each \lstinline!index! block defines a set of semantic
+annotation types that will be indexed and stored together in one index.  The
+choice of how to group annotation types together into indexes can affect the
+indexing speed, as the annotations within one index are processed sequentially
+by a single thread, whereas types in separate indexes are indexed in parallel.
+
+Each annotation type to be indexed is introduced by ``{\tt annotation}''.  This
+is a method call in the Groovy DSL which takes the following named arguments:
+\bde
+\item[helper] The {\em semantic annotation helper} Java object that should be
+  used to index this annotation type.
+\item[type] The annotation type that is to be indexed.  When using the default
+  semantic annotation helper types this can be omitted.\footnote{In particular,
+  if the specified helper has a method ``{\tt getAnnotationType()}'' then this
+  will be called and the returned value used as the annotation type.  All the
+  standard helpers provided with \Mimir\ extend
+  {\tt AbstractSemanticAnnotationHelper} which implements this method.}
+\ede
+
+\subsubsection{Semantic Annotation Helpers}
+
+Semantic annotations are stored in special indexes that associate URIs with
+document positions. During indexing, the role of the helper implementations is 
+to store the necessary information about each annotation to be indexed in a
+persistent form and return one or more URIs that identify it.
+
+One could make a distinction between {\em generic} semantic annotation helper
+types, which can be configured to handle any annotation type and features, and
+{\em special-purpose} helpers that are designed to handle specific annotation
+types.  \Mimir\ supplies a generic helper implementations in the {\tt db-h2}
+plugin that store annotation information in a relational database.  For the most
+standard cases, this default helper implementation should be sufficient.  One
+sample special-purpose helper for {\tt Measurement} annotations (as generated by
+the GATE {\tt Tagger\_Measurements} plugin) is also provided, in the {\tt
+measurements} plugin.  This is intended both to be useful in its own right and
+to serve as a template for how to implement your own helpers for other complex
+annotation types.  The {\tt sparql} plugin provides a helper that can wrap any
+other helper and add the ability to query for URI-valued features by making a
+query to a SPARQL endpoint.
+
+The plugins that include all the provided semantic annotation helpers are
+discussed in detail in Chapter~\ref{sec:plugins}. Detailed documentation for
+configuring each of the helpers is available there.
+
+{\bf Note for users upgrading from \Mimir\ 3.2.0 and earlier:} the previous
+index template DSL style using the annotation type as the method name and the
+nominalFeatures etc. as parameters is still supported but should be considered
+deprecated.  You should consider porting your index templates to the new style,
+as support for the old style may be removed in a future release.
+
+\subsection*{Document Features}\label{sec:indexing:docfeats}
+Starting with \Mimir\ version 3.4.0, annotation helpers can also be used to
+index document features.
+\clearpage
+\defaultIndexTemplate[linerange={25-25},firstnumber=25]
+
+The above declaration (note the {\tt mode} parameter!) creates a new Semantic
+Annotation Helper that uses the document features instead of the features from
+any given annotation. The helper behaves as if a single annotation, of the
+declared type (in our case {\it Document}), existed that covers the whole extent
+of the document, and has the same features as the GATE Document being indexed.
+
+Things to note:
+\begin{itemize}
+  \item All helper implementations supplied with \Mimir{} are capable of working
+  in {\tt DOCUMENT} mode, so you can use them for indexing document features.
+  \item The default value for the {\tt mode} parameter for all supplied helper
+  implementations is {\tt ANNOTATION}. Not specifying a {\tt mode} value
+  preserves the default functionality (from versions preceding 3.4.0), i.e.
+  indexing {\bf annotation} features.
+  \item You can have as many helpers as you want working in {\tt DOCUMENT}
+  mode, in parallel.
+  \item The specified value for the {\tt annType} parameter is used by the
+  helper for simulating the presence of an actual annotation spanning the whole
+  document; \Mimir\ then behaves as if such annotations actually existed. This
+  implies that you cannot re-use the name of an annotation type that is already
+  being indexed. For example, if you are already indexing actual annotations of
+  type {\tt Document}, then you will need to choose a different name for the
+  virtual annotation type used when indexing document features.
+\end{itemize}
+
+\subsection*{Document Rendering and Metadata}
+\defaultIndexTemplate[linerange={28-30},firstnumber=28]
+
+The next part of the template concerns how document-level metadata is indexed,
+and how this can be combined with the document text to render the document
+content at search time, with matches of the query highlighted.  These tasks are
+performed by objects that implement the interfaces
+\lstinline!DocumentMetadataHelper! and \lstinline!DocumentRenderer!
+respectively (both in the \lstinline!gate.mimir! package). \Mimir\ provides a
+single class \lstinline!gate.mimir.index.OriginalMarkupMetadataHelper!
+which implements both interfaces, so in most cases the same object can be used
+for both jobs.
+
+An index template must define one \lstinline!documentRenderer! and may define
+any number of \lstinline!documentMetadataHelpers! (in a square-bracketed list).
+If the renderer is an \lstinline!OriginalMarkupMetadataHelper! (or a subclass)
+then the renderer object must be included in the list of metadata helpers in
+order to function correctly.  Other metadata helpers may be added to the list
+if required.
+
+In the listing above, we use one instance of
+\lstinline!OriginalMarkupMetadataHelper! as a document renderer. To enable it to
+fucntion, we also include the same object instance in the list of metadata
+helpers. Additionally, we also construct an instance of
+\lstinline!DocumentFeaturesMetadataHelper!, which we name
+\lstinline!documentFeaturesHelper!, and we then add to the list of metadata
+helpers. \lstinline!DocumentFeaturesMetadataHelper! instances can be used to
+store additional metadata in the index being constructed. The metadata values to
+be stored must be provided in the form of GATE document features on the
+documents being indexed. When such values are present at indexing time, they are
+serialised and stored in the index. At search time, the stored metadata fields
+can be retrieved back from the index. Note that the values used must be
+serialisable to be usable (i.e. they must implement the 
+\lstinline!java.io.Serializable!) interface. 
+
+\subsection*{Miscellaneous options}
+\defaultIndexTemplate[linerange={32-34},firstnumber=32]
+Finally, additional miscellaneous options can be specified at the end of the
+template.  The supported options are:
+\bde
+\item[timeBetweenBatches] the maximum amount of time that the indexer should
+  wait between writing batches to disk.  Since only batches that have been
+  dumped to disk are searchable, this specifies the maximum time a document
+  should be held in RAM after having been submitted for indexing but before it
+  becomes available to be searched.  The value can either be a plain number (of
+  milliseconds) or a Groovy \lstinline!TimeCategory! duration expression such
+  as \lstinline!10.minutes!.  If unspecified, the default is one hour (3600000
+  milliseconds).  Note that it is always possible to force the system to dump
+  the current batch to disk immediately via the index administration page.
+\item[maximumBatches] the maximum number of constituent batches before a
+  compaction operation is triggered.  The default is 20, and it should rarely
+  be necessary to modify this as index compaction is transparent -- the index
+  behaves exactly the same whether or not it has recently been
+  compacted\footnote{The main difference is that a compacted index requires
+  fewer open file handles to operate.}.
+\ede
+
+\subsection*{Direct Indexes}
+\label{sec:direct-indexes}
+Starting with version $5.0$, \Mimir{} can build direct indexes as well as
+inverted ones. By default only inverted indexes are created, which are used to associate
+terms to documents. Direct indexes encode the inverse relation from documents to
+terms, hence a direct index can be used to find out which terms occur in any
+given document.
+
+To enable direct indexes for tokens, the configuration in the index template
+needs to be modified like in the following example:
+\begin{lstlisting}
+tokenFeatures = {
+  string(directIndex:true)
+  category(directIndex:true)
+  root()
+}
+\end{lstlisting}
+
+In this case, direct indexes will be built for the {\tt string} and {\tt
+category} features of \verb!{Token}! annotations, but not for the {\tt root}
+feature.
+
+When building a direct index for a feature that is not present on every token,
+tokens that do not have the feature will be reported as ``null'' in terms query
+result sets.  In many cases this is not desirable (for example if only a small
+minority of tokens have the feature, the nulls will swamp the real values when
+calculating statistics), and for these situations \Mimir\ offers a custom MG4J
+term processor that will omit entirely any token where the feature is missing
+or empty.  You can configure this using
+\begin{lstlisting}[texcl]
+import gate.mimir.util.IgnoreEmptiesTermProcessor
+
+tokenFeatures = {
+  featureName(directIndex:true,
+      termProcessor:IgnoreEmptiesTermProcessor.INSTANCE)
+  // $\ldots$
+}
+\end{lstlisting}
+
+In the case of semantic annotations, direct indexes are enabled in a similar
+fashion:
+\begin{lstlisting}
+index(directIndex:true) {
+  annotation helper:new DefaultHelper(...)
+  ...
+}
+\end{lstlisting}
+
+Note that direct indexes can only be enabled at the level of a {\tt index}
+element in the template, and not for individual annotation types.
+
+Direct indexes are stored in separate files from the default indirect indexes,
+so they will not affect the functionality that does not require direct indexes
+at all.
+
+Direct indexes can currently only be searched via the Java API provided by the
+{\tt gate.mimir.search.terms} package.
+
+\section{Adding Documents to an Index}\label{sec:indexing:add-docs}
+
+Once an index has been created, the next stage is to add documents to the
+index.  \Mimir\ provides an HTTP API for this which accepts documents for
+indexing via HTTP POST requests that include the document in Java serialised
+format.  The easiest way to make use of this API is via GCP (the GATE Cloud
+Paralleliser batch processing tool) using a \lstinline!MimirOutputHandler!.
+This GCP output handler makes use of the
+\lstinline!gate.mimir.index.MimirConnector! (in the {\tt mimir-client} module)
+to actually make the remote call, and you can use the same API in your own
+code.  To add a GATE document to an open index simply call:
+\begin{lstlisting}[breaklines]
+MimirConnector.defaultConnector().sendToMimir(document, uri, indexUrl);
+\end{lstlisting}
+%
+\ldots{}with the following parameters:
+\bde
+\item[document] a \lstinline!gate.Document! for indexing.
+\item[uri] the URI that should be used to identify the document in the \Mimir\
+  index.  May be \lstinline!null!, in which case \Mimir\ will generate a URI,
+  but in most cases there will be a more meaningful identifier that could be
+  used.
+\item[indexUrl] a \lstinline!java.net.URL! pointing to the location of the
+  \Mimir\ index.  This is the ``Index URL'' given on the index information page.
+\ede
+
+The document to be indexed must, of course, contain the token and semantic
+annotations that the index expects.
+
+It is possible to create your own private instance of
+\lstinline!MimirConnector! rather than simply using the default one, but this
+is not necessary in normal use.
+
+\section{The Default Representation Scheme}\label{sec:indexing:dsah-detail}
+
+The default generic SAH implementations try to minimise the amount of data
+stored in their underlying database or semantic repository by creating
+representation templates that are shared between all occurrences of annotations
+with the same values for the features. There are two levels of templates, the
+first defined by the values of nominal features, and the second that uses the
+values of all the other features. This is intended to reflect the typical
+scenario where most annotations are defined by a small set of nominal features,
+with a few of them having features with arbitrary values. Most annotation types
+would then only make use of level-1 templates, with a few of them employing both
+level-1, and level-2 templates.
+
+\begin{figure*}[htb]
+\begin{center}
+{\footnotesize  
+\begin{tabular}{|r|l|l|l|l|l|l|l|}
+\hline
+Document: & London & is & located & on & the & Thames & .\\
+\hline
+position: & 0 & 1 & 2 & 3 & 4 & 5 & 6\\
+\hline
+{\bf string:} & london & is & located & on & the & thames & .\\
+\hline
+{\bf root:} & london & be & locate & on & the & thames & .\\
+\hline
+{\bf part-of-speech:} & NNP & VBZ & VBN & IN & DT & NNP & .\\
+\hline
+{\bf Location:} & {\tt type=city} &  &  & &  & {\tt type=river} & \\
+\hline
+\end{tabular}
+
+\smallskip
+
+\begin{tabular}{ll}
+\multicolumn{2}{c}{\bf Token indexes}\\
+
+% Token root index
+\parbox[t]{5em} {
+\begin{tabular}[t]{|l|l|}
+\hline
+\multicolumn{2}{|l|}{\bf root index}\\
+\hline
+. & $0(6)$\\ 
+\hline
+be & $0(1)$\\ 
+\hline
+locate & $0(2)$\\
+\hline
+london & $0(0)$\\
+\hline
+on & $0(3)$\\
+\hline
+thames & $0(5)$\\
+\hline
+the & $0(4)$\\
+\hline
+\end{tabular}
+} &
+% Token PoS index
+\parbox[t]{6em} {
+\begin{tabular}[t]{|l|l|}
+\hline
+\multicolumn{2}{|l|}{\bf PoS index}\\
+\hline
+. & $0(6)$\\
+\hline
+DT & $0(4)$\\ 
+\hline
+IN & $0(3)$\\ 
+\hline
+NNP & $0(0, 5)$\\
+\hline
+VBN & $0(2)$\\
+\hline
+VBZ & $0(1)$\\
+\hline
+\end{tabular}
+} \\
+
+{\bf Location templates} &  {\bf Location index} \\
+% Location templates
+\parbox[t]{24em} {
+\begin{tabular}[t]{|l|l|}
+\hline
+{\bf L1 ID} & {\bf type}\\
+\hline
+1 & city\\ 
+\hline
+2 & river\\ 
+\hline
+\end{tabular}
+
+\smallskip
+
+\begin{tabular}[t]{|l|l|l|}
+\hline
+{\bf L2 ID} & {\bf L1 ID} & {\bf instURI}\\
+\hline
+1 & 1 & dbpedia.org/resource/London \\ 
+\hline
+2 & 2 & dbpedia.org/resource/Thames\_river \\ 
+\hline
+\end{tabular}
+
+\begin{tabular}[t]{|l|l|l|l|}
+\hline
+{\bf Mention ID} & {\bf L1 ID} & {\bf L2 ID} & {\bf length} \\
+\hline
+Location:1 & 1 & - & 1 \\
+\hline
+Location:2 & 1 & 1 & 1 \\ 
+\hline
+Location:3 & 2 & - & 1 \\
+\hline
+Location:4 & 2 & 2 & 1 \\
+\hline
+Location:5 & 2 & 2 & 3 \\ 
+\hline
+\end{tabular}
+} &
+
+% Location index
+\parbox[t]{14em} {
+
+\begin{tabular}[t]{|l|l|}
+\hline
+\multicolumn{2}{|l|}{\bf \{Location\} index}\\
+\hline
+Location:1 & $0(0)$\\
+\hline
+Location:2 & $0(0)$\\
+\hline
+Location:3 & $0(5)$\\ 
+\hline
+Location:4 & $0(5)$\\ 
+\hline
+\end{tabular}
+}
+\end{tabular}
+} 
+\caption[\Mimir{} index contents]{A very simple example document and the
+corresponding contents of a \Mimir{} index. We assume that the only document ID is $0$.\\
+Different {\em views} of the document text are generated by different token
+features, which are stored in separate sub-indexes. The document string has been
+down-cased prior to indexing; we do not show the {\tt string} index, as it is
+very similar to the one for the {\tt root} feature. The values used for
+Part-of-Speech (PoS) are standard tags as produced by GATE's PoS Tagger:
+DT=determiner, IN=preposition, NNP=proper noun, VBN=verb - past participle, 
+VBZ=verb - 3rd person singular present.\\
+A single annotation type ({\tt \{Location\}}) is being indexed, with two
+different occurrences, and we assume the only non-nominal feature to be the
+DBpedia instance URI. Note that ``{\tt Location:5}'' (i.e. a mention of the
+Thames that is 3-tokens long) does not actually occur in the document text, so
+it is not present in the index. We have included it here as an example of an
+annotation of length greater than $1$.}
+\label{fig:token-indexes}
+\end{center}
+\end{figure*}
+
+For each input annotation the following IDs are retrieved (or generated on first
+occurrence):\\
+{\bf Level-1 template ID} The annotation type and the values for all its nominal
+features form a tuple. The first time each tuple configuration is seen, it is
+allocated a level-1 ID. Subsequent annotations that match an already existing
+tuple will re-use the same level-1 ID. For example, in
+Figure~\ref{fig:token-indexes} all annotations of type {\em Location} with
+feature {\em city} will use the level-1 ID `{\tt 1}'.\\
+{\bf Level-2 template ID} The level-1 template ID together with the values for
+all the remaining (i.e. non-nominal) features form a second tuple. Unique
+configurations of these tuples are allocated level-2 IDs. It should be noted
+that most NLP annotations tend to include only nominal features, so they would
+not require a level-2 ID. The \verb!{Location}! annotations shown in
+Figure~\ref{fig:token-indexes} have a non-nominal feature, so they each get a
+level-2 ID allocated to them. Note, however, that all further mentions of e.g.
+the {\em Thames} would re-use the same IDs, even when phrased differently in
+the text, e.g ``{\em the river Thames}'', or ``{\em La Tamise}''.
+\\
+{\bf Mention ID} The level-1 ID and the annotation length (number of tokens)
+forms a tuple, which is associated with a mention ID -- in
+figure~\ref{fig:token-indexes} {\em Location} annotations with feature {\em
+city} covering one token will take the mention ID ``Location:1''. If present,
+the level-2 ID and the annotation length also get a mention ID. For example, all
+mentions of ``the River Thames'' are associated with the mention ID
+``{\tt Location:5}'' (because they refer to the Thames, and are 3 tokens long).
+
+Finally, the one or two mention IDs associated with each annotation are added to
+an \emph{annotation index}, using the annotation start token as
+the position. 
+
+We index two separate mention IDs associated with either level-1 or level-2 IDs,
+in order to speed-up searches that only make use of nominal features. For
+annotation types that have non-nominal features, the number of level-2 IDs will
+be orders of magnitude greater than that for level-1. If a search only relies on
+nominal constraints (a large proportion of searches tend to fall into this
+category), then the query can be answered much faster by only accessing the
+smaller number of posting lists for the matching level-1 IDs.

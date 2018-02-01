@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   height="58"
+   id="svg1"
+   inkscape:version="0.48.0 r9654"
+   sodipodi:docname="download-archive.svg"
+   sodipodi:version="0.32"
+   version="1.0"
+   width="58"
+   x="0"
+   y="0"
+   inkscape:export-filename="/home/valyt/vcs/gate-top/externals/cloudy/mimir-cloud/web-app/images/skin/download_archive.png"
+   inkscape:export-xdpi="24.96645"
+   inkscape:export-ydpi="24.96645">
+  <metadata
+     id="metadata3">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:title></dc:title>
+        <dc:description />
+        <dc:subject>
+          <rdf:Bag>
+            <rdf:li>hash</rdf:li>
+            <rdf:li />
+            <rdf:li>action</rdf:li>
+            <rdf:li>computer</rdf:li>
+            <rdf:li>icons</rdf:li>
+            <rdf:li>theme</rdf:li>
+          </rdf:Bag>
+        </dc:subject>
+        <dc:publisher>
+          <cc:Agent
+             rdf:about="http://www.openclipart.org">
+            <dc:title>Danny Allen</dc:title>
+          </cc:Agent>
+        </dc:publisher>
+        <dc:creator>
+          <cc:Agent>
+            <dc:title>Danny Allen</dc:title>
+          </cc:Agent>
+        </dc:creator>
+        <dc:rights>
+          <cc:Agent>
+            <dc:title>Danny Allen</dc:title>
+          </cc:Agent>
+        </dc:rights>
+        <dc:date />
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <cc:license
+           rdf:resource="http://web.resource.org/cc/PublicDomain" />
+        <dc:language>en</dc:language>
+      </cc:Work>
+      <cc:License
+         rdf:about="http://web.resource.org/cc/PublicDomain">
+        <cc:permits
+           rdf:resource="http://web.resource.org/cc/Reproduction" />
+        <cc:permits
+           rdf:resource="http://web.resource.org/cc/Distribution" />
+        <cc:permits
+           rdf:resource="http://web.resource.org/cc/DerivativeWorks" />
+      </cc:License>
+    </rdf:RDF>
+  </metadata>
+  <sodipodi:namedview
+     bordercolor="#666666"
+     borderopacity="1.0"
+     id="base"
+     inkscape:cx="29.721729"
+     inkscape:cy="31.63068"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:window-height="755"
+     inkscape:window-width="1166"
+     inkscape:window-x="166"
+     inkscape:window-y="65"
+     inkscape:zoom="9.7333333"
+     pagecolor="#ffffff"
+     showgrid="false"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg1"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0" />
+  <defs
+     id="defs3" />
+  <rect
+     height="17.722586"
+     id="rect976"
+     rx="0"
+     sodipodi:stroke-cmyk="(0.0000000 0.0000000 0.0000000 0.69999999)"
+     style="fill:#ede8ff;fill-opacity:1;fill-rule:evenodd;stroke:#362d4b;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+     transform="scale(-1,1)"
+     width="24.239361"
+     x="-48.379223"
+     y="38.000767" />
+  <rect
+     height="18.450911"
+     id="rect977"
+     rx="0"
+     sodipodi:stroke-cmyk="(0.0000000 0.0000000 0.0000000 0.69999999)"
+     style="fill:#ede8ff;fill-opacity:1;fill-rule:evenodd;stroke:#362d4b;stroke-width:2.25769162;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+     transform="matrix(-0.78474894,-0.61981377,0,1,0,0)"
+     width="21.482248"
+     x="-30.665829"
+     y="18.288923" />
+  <rect
+     height="10.835736"
+     id="rect975"
+     rx="0"
+     sodipodi:stroke-cmyk="(0.0000000 0.0000000 0.0000000 0.69999999)"
+     style="fill:#ede8ff;fill-opacity:1;fill-rule:evenodd;stroke:#362d4b;stroke-width:2.18939281;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+     transform="matrix(-1,0,0.55104794,0.83447359,0,0)"
+     width="25.000893"
+     x="-15.757397"
+     y="19.213247" />
+  <path
+     inkscape:connector-curvature="0"
+     d="M 48.083619,38.144409 56.656075,32.133836 40.890638,19.422952 32.121113,24.940856 48.083619,38.144409 z"
+     id="path980"
+     sodipodi:nodetypes="ccccc"
+     sodipodi:stroke-cmyk="(0.0000000 0.0000000 0.0000000 0.69999999)"
+     style="fill:#ede8ff;fill-opacity:1;fill-rule:evenodd;stroke:#362d4b;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+  <rect
+     height="20.834574"
+     id="rect974"
+     rx="0"
+     sodipodi:stroke-cmyk="(0.0000000 0.0000000 0.0000000 0.69999999)"
+     style="fill:#ede8ff;fill-opacity:1;fill-rule:evenodd;stroke:#362d4b;stroke-width:2.53568554;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+     transform="matrix(-1,0,0.78292758,0.62211285,0,0)"
+     width="24.830564"
+     x="-0.59882993"
+     y="40.290611" />
+  <path
+     inkscape:connector-curvature="0"
+     d="m 32.150224,25.323069 0,12.588409"
+     id="path981"
+     sodipodi:stroke-cmyk="(0.0000000 0.0000000 0.0000000 0.69999999)"
+     style="fill:#ede8ff;fill-opacity:1;fill-rule:evenodd;stroke:#362d4b;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+  <path
+     inkscape:connector-curvature="0"
+     d="m 21.687202,0.92661238 c 1.40963,0.067462 8.878293,-0.28965904 9.780221,0.10273972 l 0,7.392168 L 42.206602,8.5242599 26.907617,20.264121 11.608633,8.5242599 l 10.078569,0 z"
+     id="path968"
+     sodipodi:nodetypes="cccccccc"
+     sodipodi:stroke-cmyk="(0 0 0 0.8)"
+     style="font-size:12px;fill:#ede8ff;fill-opacity:1;fill-rule:evenodd;stroke:#362d4b;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+  <g
+     id="g4029"
+     transform="matrix(0.04131205,0.03231218,0,0.11368093,0.42540786,-19.092961)">
+    <text
+       id="text2816"
+       y="460.93607"
+       x="316.57007"
+       style="font-size:42.1182518px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;text-anchor:start;opacity:0.81999966;fill:#006193;fill-opacity:1;stroke:none;font-family:DejaVu Sans Mono;-inkscape-font-specification:DejaVu Sans Mono"
+       xml:space="preserve"><tspan
+         y="460.93607"
+         x="316.57007"
+         style="font-size:105.29563141px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;fill:#006193;fill-opacity:1;font-family:DejaVu Sans;-inkscape-font-specification:DejaVu Sans"
+         id="tspan2820"
+         sodipodi:role="line">ímir</tspan></text>
+    <text
+       id="text2816-7"
+       y="460.93607"
+       x="212.56174"
+       style="font-size:50.01221085px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;text-anchor:start;opacity:0.81999966;fill:#006193;fill-opacity:1;stroke:none;font-family:DejaVu Sans Mono;-inkscape-font-specification:DejaVu Sans Mono"
+       xml:space="preserve"><tspan
+         y="460.93607"
+         x="212.56174"
+         style="font-size:125.03052521px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;fill:#006193;fill-opacity:1;font-family:DejaVu Sans;-inkscape-font-specification:DejaVu Sans"
+         id="tspan2820-38"
+         sodipodi:role="line">M</tspan></text>
+    <rect
+       y="369.78833"
+       x="323.97366"
+       height="28.856819"
+       width="31.103027"
+       id="rect3619"
+       style="opacity:0.81999966;fill:#006193;fill-opacity:1;stroke:none" />
+    <g
+       transform="translate(127.90287,-99.421255)"
+       id="text2816-2"
+       style="font-size:42.1182518px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke:none;font-family:DejaVu Sans Mono;-inkscape-font-specification:DejaVu Sans Mono">
+      <path
+         sodipodi:nodetypes="ccccc"
+         id="path3855"
+         style="font-size:105.29563141px;fill:#ffffff;fill-opacity:1;font-family:DejaVu Sans;-inkscape-font-specification:DejaVu Sans"
+         d="m 213.14954,473.97217 10.23136,0 -16.76093,19.33162 -7.86632,0 14.39589,-19.33162"
+         inkscape:connector-curvature="0" />
+    </g>
+  </g>
+</svg>

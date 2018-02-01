@@ -1,0 +1,148 @@
+This chapter is aimed at the impatient reader who wants a working system as
+quickly as possible. The technical detail is deliberately kept at a minimum so,
+while you will hopefully end up with something that works, you will not
+necessarily understand how it all fits together. For that, please read the
+remainder of this guide.
+
+\section{Set Up Your Environment}
+We suggest you try this on a 64~bit operating system, as that is better suited
+for running \Mimir{}. A 32~bit system would also work, but the maximum sizes for
+the indexes would be limited.
+
+In order to build and run a \Mimir{} server you will need the following pieces
+of software installed on your system:
+\begin{description}
+  \item[Java Development Kit] version 7 or newer. If you don't have one, you can
+  download one from 
+  Oracle\footnote{\url{http://www.oracle.com/technetwork/java/javase/downloads/index.html}}.
+  Make sure you get the JDK and not the Java Runtime Environment (JRE), as that
+  would not be suitable. Once installed, make sure your \verb!JAVA_HOME!
+  environment variable points to the location where the JDK was installed.  Make
+  sure that the \verb!$JAVA_HOME/bin! location is on your \verb!PATH!.
+  \item[Apache ANT] version 1.8.1 or later. You can download it from
+  \url{http://ant.apache.org/}. Once installed, make sure your \verb!ANT_HOME!
+  environment variable points to the top-level directory of your installation.
+  Make  sure that the \verb!$ANT_HOME/bin! location is on your \verb!PATH!.
+  \item[Grails] version 2.5.4. You can download this from
+  \url{http://grails.org}. Once installed, make sure your \verb!GRAILS_HOME!
+  environment variable points to the top-level directory of your installation.
+  Make sure that the \verb!$GRAILS_HOME/bin! location is on your \verb!PATH!.
+  \textbf{Note that \Mimir\ \mimirversion\ requires Grails 2.5.4, it will not
+  work with 3 or later}. Earlier versions of \Mimir\ used different versions
+  of Grails, make sure you are reading the documentation for the specific
+  version you are trying to run.
+  \item[Working Internet Connection] The next step, described below, is the
+  building of the \Mimir{} library. This starts by automatically downloading all
+  the required dependencies, so it requires a working Internet connection. Once
+  the software is built, it can work without an remote connection.
+  \item[GATE Developer] \Mimir{} is an indexer for GATE Documents. The simplest
+  way of generating some GATE documents to be indexed is by using the GATE
+  Developer tool\footnote{GATE Developer is available at
+  \url{http://gate.ac.uk/download/}. Usage of GATE Developer is beyond the scope
+  of this document, so we assume you have a basic understanding of how to use
+  it. If not, a good place to start is the tutorials page at
+  \url{http://gate.ac.uk/demos/developer-videos/}.}. 
+\end{description}
+%
+\section{Build and Run a \Mimir{} Web Application}
+%
+After all the prerequisites are installed, we can move to building a \Mimir{}
+application. For the purposes of this demo, we will build the {\tt mimir-cloud}
+application, which is included in the source tree.
+
+The following steps will help you build the {\tt mimir-cloud} application.
+Commands that you have to execute are formatted in a distinctive font
+\cmd{like this}.
+\begin{enumerate}
+  \item {\bf Download the \Mimir{} sources}, if you do not already have a copy.
+  You can get either an archive of the entire source tree, or check it out
+  directly from our subversion repository. Instructions for doing so are
+  available on \Mimir{}'s web page at:
+  \url{http://gate.ac.uk/mimir/index.html}.
+  If you downloaded the .tar.gz archive on Windows we recommend not using the
+  popular Winzip utility, as that sometimes mangles the file names. 
+  7-Zip\footnote{\url{http://www.7-zip.org/}} and the Cygwin ``tar'' utility are
+  known to work correctly in this respect, and other free archiving tools are 
+  available that support the {\tt .tar.gz} format.
+  Unpacking a source archive (or checking out the source code with subversion)
+  will create a new directory called {\tt mimir} containing all the source
+  files.
+  \item {\bf Build \Mimir{}:} change to the top level directory where you
+  unpacked the downloaded \Mimir{} sources. If you can see the {\tt mimir-core},
+  {\tt mimir-client}, {\em etc.} directories, then you are in the correct
+  directory. Execute the \cmd{ant} command. This will download all the
+  required dependencies, compile all the \Mimir{} libraries, and build the {\tt
+  mimir-web} Grails plugin.
+  
+  If you have multiple Grails versions installed, and Grails 2.5.4 is not the
+  default, you must give priority to Grails 2.5.4.  Do so by executing
+  \cmd{export GRAILS\_HOME=/path/to/grails-2.5.4}, and then use the following:
+  \cmd{ant -Dgrails.bin=\$GRAILS\_HOME/bin/grails} (instead of \cmd{ant}) to
+  override the default Grails settings.
+  \item {\bf Run the mimir-cloud application:}  change to the {\tt
+  mimir-cloud} directory (\cmd{cd mimir-cloud}) and execute the \cmd{grails prod
+  run-app} command. This will start the application and will notify you which
+  URL you should use in your browser to access it (normally
+  \url{http://localhost:8080/mimir-cloud/}).
+\end{enumerate}
+%
+\section{Create, Populate, and Search an Index}
+%
+\begin{enumerate}
+\setcounter{enumi}{3}
+  \item {\bf Set-up your new \Mimir{} application:}
+  navigate to the administration page. You will be prompted to configure your
+  \Mimir{} instance. After clicking the link, enter the path to a local writable directory
+  where new indexes will be created, and click the {\em Update}.button.
+  \item \label{step:create} {\bf Create a new index:} navigate back to the
+  administration page (by clicking the link at the top of the page). Under the {\em Local Indexes}
+  section, click the {\em create a new local index} link. Give it a name (e.g.
+  {\tt `test'}), and click the {\em create} button. Back on the administration
+  page, click the name of the newly created index. This will take you to the
+  index details page, where you can find the {\em Index URL} attribute. Make a
+  note of its value, as you will need it later.
+  \item {\bf Populate the new index:} 
+  \begin{enumerate}
+    \item Start GATE Developer, load the ANNIE application (Main Menu 
+    $\rightarrow$ File $\rightarrow$ Load ANNIE System $\rightarrow$ with
+    Defaults).
+    \item Open the CREOLE Plugin Manager ((Main Menu $\rightarrow$ File
+    $\rightarrow$ Manage CREOLE Plugins), and add a new plugin directory
+    pointing at the {\tt mimir-client} directory inside the \Mimir{}
+    distribution. Make sure the new plugin is loaded by checking the
+    appropriate check-box.
+    \item Load a new instance of {\em \Mimir{} Indexing PR} (Main Menu
+    $\rightarrow$ File $\rightarrow$ New Processing Resource $\rightarrow$
+    \Mimir{} Indexing PR), and add it to the end of the ANNIE application.
+    \item Make sure that the {\tt mimirIndexUrl} parameter for the new PR is set
+    to the {\em Index URL} value obtained at Step~\ref{step:create}.
+    \item Load some test documents (e.g. some web pages from news web sites),
+    create a GATE Corpus, add all the documents to the corpus, and set the
+    newly corpus as the target for the ANNIE application.
+    \item Run the ANNIE application. This will annotate the documents created
+    during the previous step. The \Mimir{} Indexing PR instance will make
+    sure the annotated documents are sent for indexing to your new Local Index.
+  \end{enumerate}
+  \item {\bf Search the new index:} as soon as the index has started indexing
+  document, you can used it to search by clicking the {\em search} link next to
+  the name of your new index. There is a time delay between documents being
+  submitted for indexing and them being available for searching. YOu can speed
+  this process up by manualy performing a {\em sync-to-disk} operation or by
+  reducing the time interval between batches. Both of these actions are
+  available on the index administration page.
+\end{enumerate}
+
+To shut down the running web application, create a file named {\tt
+.kill-run-app} in the {\em mimir-cloud} directory, and wait for the application
+to shut itself down. If that does not work (creating files with `.' at the start
+of their names is sometimes difficult on Windows), then you can just focus the
+command prompt window where you started the application and interrupt it by
+pressing the {\tt Ctrl-C} key combination. This might, on rare occasions,
+invalidate the database of the \Mimir{} web application, but it would not affect
+any indexes you have created (they would simply disappear from the list and
+you would need to re-import them).
+
+To deploy the \Mimir{} web application to an application server (such as Apache
+Tomcat) run the \cmd{grails prod war} command in the mimir-cloud directory. A
+{\tt mimir-cloud-\{version\}.war} file will be created for you in the {\tt
+target} sub-directory.
