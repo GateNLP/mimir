@@ -35,3 +35,20 @@ and are built using Gradle and Grails 3.3:
 Other components:
 
 - doc: the Mímir user guide (LaTeX source and built PDF)
+
+## How to build
+
+Building Mímir is a two step process, you will require an installation of
+Maven but not Grails/Gradle as the web components come with their own wrapper:
+
+ 1. run `mvn install` in this directory to build all the Java components
+ 2. run `./grailsw run-app` in `webapp/mimir-cloud` to build and start up
+    the sample web application.
+
+If you want to build a WAR for deployment to a Tomcat or similar web server
+then change to the `webapp/mimir-cloud` directory and run:
+
+ 1. `./grailsw run-command cache-mimir-plugins`
+ 2. `./grailsw prod war`
+
+The resulting WAR file will be created in `build/libs`
