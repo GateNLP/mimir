@@ -62,6 +62,25 @@
     <module>plugins/measurements</module>
   </modules>
 
+  <!--
+  we put the test module in an active-by-default profile, so it can be easily
+  turned off when doing a deploy (as it only contains tests, there's no point
+  in deploying its empty JAR to the repository)
+  -->
+  <profiles>
+    <profile>
+      <id>with-tests</id>
+      <activation>
+        <property>
+          <name>!skipTests</name>
+        </property>
+      </activation>
+      <modules>
+        <module>mimir-test</module>
+      </modules>
+    </profile>
+  </profiles>
+
   <distributionManagement>
     <snapshotRepository>
       <id>gate.snapshots</id>

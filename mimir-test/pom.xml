@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>uk.ac.gate.mimir</groupId>
+  <artifactId>mimir-test</artifactId>
+  <packaging>jar</packaging>
+  <url>http://gate.ac.uk/mimir</url>
+
+  <parent>
+    <groupId>uk.ac.gate.mimir</groupId>
+    <artifactId>mimir-parent</artifactId>
+    <version>5.6-SNAPSHOT</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>1.8</maven.compiler.target>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>uk.ac.gate.mimir</groupId>
+      <artifactId>mimir-core</artifactId>
+      <version>5.6-SNAPSHOT</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>uk.ac.gate.mimir</groupId>
+      <artifactId>mimir-client</artifactId>
+      <version>5.6-SNAPSHOT</version>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- For the console -->
+    <dependency>
+      <groupId>org.codehaus.groovy</groupId>
+      <artifactId>groovy-all</artifactId>
+      <version>2.0.8</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.12</version>
+      <scope>test</scope>
+    </dependency>
+
+  </dependencies>
+
+</project>
