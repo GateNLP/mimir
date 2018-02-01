@@ -16,7 +16,7 @@ apply plugin:"eclipse"
 apply plugin:"idea"
 apply plugin:"org.grails.grails-plugin"
 //apply plugin:"org.grails.grails-plugin-publish"
-apply plugin:'maven'
+apply plugin:'maven-publish'
 apply plugin:"asset-pipeline"
 apply plugin:"org.grails.grails-gsp"
 
@@ -99,4 +99,22 @@ assets {
 assets {
     minifyJs = false
     minifyCss = true
+}
+
+publishing {
+  publications {
+    mavenJava(MavenPublication) {
+      from components.java
+    }
+  }
+
+  repositories {
+    maven {
+      url = "https://repo.gate.ac.uk/content/repositories/${project.version.endsWith('-SNAPSHOT') ? 'snapshots' : 'releases'}"
+      credentials {
+        username project.hasProperty('gate.repo.username') ? project.property('gate.repo.username') : ''
+        password project.hasProperty('gate.repo.password') ? project.property('gate.repo.password') : ''
+      }
+    }
+  }
 }

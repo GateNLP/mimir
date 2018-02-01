@@ -13,7 +13,7 @@ group "uk.ac.gate.mimir"
 apply plugin: 'java'
 apply plugin: 'gwt-compiler'
 apply plugin: 'eclipse'
-apply plugin: 'maven'
+apply plugin: 'maven-publish'
 
 repositories {
   mavenCentral()
@@ -27,5 +27,30 @@ gwt {
 jar {
   from(tasks.compileGwt.outputs) {
     into 'META-INF/assets/gwt'
+  }
+}
+
+task sourceJar(type: Jar) {
+  from sourceSets.main.allJava
+}
+
+publishing {
+  publications {
+    mavenJava(MavenPublication) {
+      from components.java
+      artifact sourceJar {
+        classifier "sources"
+      }
+    }
+  }
+
+  repositories {
+    maven {
+      url = "https://repo.gate.ac.uk/content/repositories/${project.version.endsWith('-SNAPSHOT') ? 'snapshots' : 'releases'}"
+      credentials {
+        username project.hasProperty('gate.repo.username') ? project.property('gate.repo.username') : ''
+        password project.hasProperty('gate.repo.password') ? project.property('gate.repo.password') : ''
+      }
+    }
   }
 }
