@@ -145,7 +145,7 @@ public class TermQuery implements QueryNode {
      * @see gate.mimir.search.query.QueryExecutor#nextDocument()
      */
     public long nextDocument(long from) throws IOException {
-      if(closed) return latestDocument = -1;
+      if(closed || from+1 >= atomicIndex.getIndex().numberOfDocuments) return latestDocument = -1;
       if(latestDocument == -1){
         //we have exhausted the search already
         return latestDocument;
