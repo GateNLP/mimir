@@ -9,6 +9,9 @@ class UrlMappings {
     "/admin/passwords"(controller:"mimirStaticPages", action:"passwords")
     "/admin/savePasswords"(controller:"mimirStaticPages", action:"savePasswords")
     
+    // Put indexDownload under /admin so it will be protected by the S2
+    // requestmap
+    "/admin/indexDownload/$action?/$id?/$fileName?" (controller:'indexDownload', params:[fileName:fileName])
     
     // spring security
     "/login/$action?"(controller: "login")

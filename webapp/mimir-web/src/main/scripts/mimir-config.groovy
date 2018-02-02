@@ -52,3 +52,10 @@ grails-app/conf/application.groovy, run
 in the top level of your Grails application.
 """
 }
+
+def mdl = model(config.grails.codegen.defaultPackage + '.MimirUrlMappings')
+println "Writing standard Mímir URL mappings to grails-app/controllers/${mdl.packagePath}/MimirUrlMappings.groovy"
+
+render(template:template('MimirUrlMappings.groovy'),
+       destination:file("grails-app/controllers/${mdl.packagePath}/MimirUrlMappings.groovy"),
+       model:mdl)
