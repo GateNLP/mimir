@@ -41,6 +41,34 @@ publishing {
       artifact sourceJar {
         classifier "sources"
       }
+
+      pom.withXml {
+        Node pomNode = asNode()
+
+        pomNode.children().last() + {
+          delegate.name "Mímir search UI"
+          delegate.description """\
+            GWT user interface used by the Mímir search web application.
+            """
+          delegate.url "https://gate.ac.uk/mimir"
+
+          delegate.developers {
+            developer {
+              id "gate-team"
+              name "GATE Team"
+              email "gate-developers@lists.sourceforge.net"
+            }
+          }
+
+          delegate.licenses {
+            license {
+              name "GNU Lesser General Public License (LGPL), Version 3"
+              url "http://www.gnu.org/licenses/lgpl.html"
+              distribution "repo"
+            }
+          }
+        }
+      }
     }
   }
 
