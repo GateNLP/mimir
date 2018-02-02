@@ -76,20 +76,6 @@ bootRun {
 }
 // enable if you wish to package this plugin as a standalone application
 bootRepackage.enabled = false
-/*
-grailsPublish {
-    // TODO: Provide values here
-    user = 'user'
-    key = 'key'
-    githubSlug = 'foo/bar'
-    license {
-        name = 'Apache-2.0'
-    }
-    title = "My Plugin"
-    desc = "Full plugin description"
-    developers = [johndoe:"John Doe"]
-}
-*/
 
 assets {
     packagePlugin = true
@@ -105,6 +91,49 @@ publishing {
   publications {
     mavenJava(MavenPublication) {
       from components.java
+
+      // this code is copied from what the grails-plugin-publish Gradle plugin
+      // does, we don't want to use that directly
+      pom.withXml {
+        Node pomNode = asNode()
+
+        if(pomNode.dependencyManagement) {
+          pomNode.dependencyManagement[0].replaceNode {}
+        }
+
+        pomNode.children().last() + {
+          delegate.name "Mímir web application core"
+          delegate.description """\
+            Grails plugin which implements the Mímir web application core functionality.
+            Host applications such as mimir-cloud add additional functions such as
+            authentication and security.
+            """
+          delegate.url "https://gate.ac.uk/mimir"
+
+          delegate.developers {
+            developer {
+              id "gate-team"
+              name "GATE Team"
+              email "gate-developers@lists.sourceforge.net"
+            }
+          }
+
+          delegate.licenses {
+            license {
+              name "GNU Lesser General Public License (LGPL), Version 3"
+              url "http://www.gnu.org/licenses/lgpl.html"
+              distribution "repo"
+            }
+          }
+        }
+
+        // remove dependencies that don't have a version
+        pomNode.dependencies.dependency.findAll {
+          it.version.text().isEmpty()
+        }.each {
+          it.replaceNode {}
+        }
+      }
     }
   }
 
