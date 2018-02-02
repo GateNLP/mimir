@@ -72,8 +72,14 @@ bootRun {
     addResources = true
 }
 
+// Since the maven cache of plugins only works if the WAR is expanded, there's
+// no point in making an executable WAR when we know it won't work properly.
+bootRepackage {
+  enabled = false
+}
 
 assets {
+    // don't bother minifying JS as most of it has been minified by GWT already
     minifyJs = false
     minifyCss = true
 }
