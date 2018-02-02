@@ -46,6 +46,7 @@ import gate.Document;
 import gate.Factory;
 import gate.Gate;
 import gate.corpora.DocumentImpl;
+import gate.creole.Plugin;
 import gate.creole.ResourceData;
 import gate.mimir.AbstractSemanticAnnotationHelper;
 import gate.mimir.IndexConfig;
@@ -96,27 +97,22 @@ public class Scratch {
   }
   
   public static final void mainIndexConvert(String[] args) throws Exception {
-    Gate.setGateHome(new File("gate-home"));
-    Gate.setUserConfigFile(new File("gate-home/user-gate.xml"));
+    // GATE, Mimir init
     Gate.init();
     // load the tokeniser plugin
-    Gate.getCreoleRegister().registerDirectories(
-      new File("gate-home/plugins/ANNIE-tokeniser").toURI().toURL());
+    Gate.getCreoleRegister().registerPlugin(new Plugin.Maven("uk.ac.gate.plugins", "annie", "8.5-SNAPSHOT"));
     // load the DB plugin
-    Gate.getCreoleRegister().registerDirectories(
-      new File("../plugins/db-h2").toURI().toURL());
+    Gate.getCreoleRegister().registerPlugin(new Plugin.Maven("uk.ac.gate.mimir", "mimir-plugin-dbh2", "5.6-SNAPSHOT"));
     // load the measurements plugin
-    Gate.getCreoleRegister().registerDirectories(
-      new File("../plugins/measurements").toURI().toURL());
-    Gate.getCreoleRegister().registerDirectories(
-      new File("../plugins/sparql").toURI().toURL());
+    Gate.getCreoleRegister().registerPlugin(new Plugin.Maven("uk.ac.gate.mimir", "mimir-plugin-measurements", "5.6-SNAPSHOT"));
+    // load the sparql plugin
+    Gate.getCreoleRegister().registerPlugin(new Plugin.Maven("uk.ac.gate.mimir", "mimir-plugin-sparql", "5.6-SNAPSHOT"));
     
     if(args.length != 1) throw new RuntimeException(
         "You need to provide a single commnad line parameter, which should "
         + "be the path to a pre-5.0 Mímir index.");
     File indexDir = new File(args[0]);
-    IndexUpgrader indexUpgrader =  new IndexUpgrader();
-    indexUpgrader.upgradeIndex(indexDir);
+    IndexUpgrader.upgradeIndex(indexDir);
   }
   
   
@@ -191,20 +187,17 @@ public class Scratch {
   }
   
   public static void mainSimple(String[] args) throws Exception {
-    Gate.setGateHome(new File("gate-home"));
-    Gate.setUserConfigFile(new File("gate-home/user-gate.xml"));
+    // GATE, Mimir init
     Gate.init();
     // load the tokeniser plugin
-    Gate.getCreoleRegister().registerDirectories(
-      new File("gate-home/plugins/ANNIE-tokeniser").toURI().toURL());
+    Gate.getCreoleRegister().registerPlugin(new Plugin.Maven("uk.ac.gate.plugins", "annie", "8.5-SNAPSHOT"));
     // load the DB plugin
-    Gate.getCreoleRegister().registerDirectories(
-      new File("../plugins/db-h2").toURI().toURL());
+    Gate.getCreoleRegister().registerPlugin(new Plugin.Maven("uk.ac.gate.mimir", "mimir-plugin-dbh2", "5.6-SNAPSHOT"));
     // load the measurements plugin
-    Gate.getCreoleRegister().registerDirectories(
-      new File("../plugins/measurements").toURI().toURL());
-    Gate.getCreoleRegister().registerDirectories(
-      new File("../plugins/sparql").toURI().toURL());
+    Gate.getCreoleRegister().registerPlugin(new Plugin.Maven("uk.ac.gate.mimir", "mimir-plugin-measurements", "5.6-SNAPSHOT"));
+    // load the sparql plugin
+    Gate.getCreoleRegister().registerPlugin(new Plugin.Maven("uk.ac.gate.mimir", "mimir-plugin-sparql", "5.6-SNAPSHOT"));
+    
     MimirIndex mainIndex = new MimirIndex(new File(args[0]));
     QueryEngine qEngine = mainIndex.getQueryEngine();
     
@@ -248,15 +241,17 @@ public class Scratch {
    * Scratch code to exercise the 5.0 indexer framework 
    */
   public static void mainIndexer5(String[] args) throws Exception {
-    Gate.setGateHome(new File("gate-home"));
-    Gate.setUserConfigFile(new File("gate-home/user-gate.xml"));
+    // GATE, Mimir init
     Gate.init();
     // load the tokeniser plugin
-    Gate.getCreoleRegister().registerDirectories(new File("gate-home/plugins/ANNIE-tokeniser").toURI().toURL());
+    Gate.getCreoleRegister().registerPlugin(new Plugin.Maven("uk.ac.gate.plugins", "annie", "8.5-SNAPSHOT"));
     // load the DB plugin
-    Gate.getCreoleRegister().registerDirectories(new File("../plugins/db-h2").toURI().toURL());
+    Gate.getCreoleRegister().registerPlugin(new Plugin.Maven("uk.ac.gate.mimir", "mimir-plugin-dbh2", "5.6-SNAPSHOT"));
     // load the measurements plugin
-    Gate.getCreoleRegister().registerDirectories(new File("../plugins/measurements").toURI().toURL());
+    Gate.getCreoleRegister().registerPlugin(new Plugin.Maven("uk.ac.gate.mimir", "mimir-plugin-measurements", "5.6-SNAPSHOT"));
+    // load the sparql plugin
+    Gate.getCreoleRegister().registerPlugin(new Plugin.Maven("uk.ac.gate.mimir", "mimir-plugin-sparql", "5.6-SNAPSHOT"));
+    
     
     File indexDir = new File(args[0]);
     
@@ -309,15 +304,17 @@ public class Scratch {
    * Scratch code to exercise the 5.0 indexer framework 
    */
   public static void mainAtomicTokenIndexer5(String[] args) throws Exception {
-    Gate.setGateHome(new File("gate-home"));
-    Gate.setUserConfigFile(new File("gate-home/user-gate.xml"));
+    // GATE, Mimir init
     Gate.init();
     // load the tokeniser plugin
-    Gate.getCreoleRegister().registerDirectories(new File("gate-home/plugins/ANNIE-tokeniser").toURI().toURL());
+    Gate.getCreoleRegister().registerPlugin(new Plugin.Maven("uk.ac.gate.plugins", "annie", "8.5-SNAPSHOT"));
     // load the DB plugin
-    Gate.getCreoleRegister().registerDirectories(new File("../plugins/db-h2").toURI().toURL());
+    Gate.getCreoleRegister().registerPlugin(new Plugin.Maven("uk.ac.gate.mimir", "mimir-plugin-dbh2", "5.6-SNAPSHOT"));
     // load the measurements plugin
-    Gate.getCreoleRegister().registerDirectories(new File("../plugins/measurements").toURI().toURL());
+    Gate.getCreoleRegister().registerPlugin(new Plugin.Maven("uk.ac.gate.mimir", "mimir-plugin-measurements", "5.6-SNAPSHOT"));
+    // load the sparql plugin
+    Gate.getCreoleRegister().registerPlugin(new Plugin.Maven("uk.ac.gate.mimir", "mimir-plugin-sparql", "5.6-SNAPSHOT"));
+    
     
     File indexDir = new File(args[0]);
     
@@ -399,21 +396,16 @@ public class Scratch {
    * @param args
    */
   public static void mainScorers(String[] args) throws Exception {
-    Gate.setGateHome(new File("gate-home"));
-    Gate.setUserConfigFile(new File("gate-home/user-gate.xml"));
+    // GATE, Mimir init
     Gate.init();
     // load the tokeniser plugin
-    Gate.getCreoleRegister().registerDirectories(
-      new File("gate-home/plugins/ANNIE-tokeniser").toURI().toURL());
+    Gate.getCreoleRegister().registerPlugin(new Plugin.Maven("uk.ac.gate.plugins", "annie", "8.5-SNAPSHOT"));
     // load the DB plugin
-    Gate.getCreoleRegister().registerDirectories(
-      new File("../plugins/db-h2").toURI().toURL());
+    Gate.getCreoleRegister().registerPlugin(new Plugin.Maven("uk.ac.gate.mimir", "mimir-plugin-dbh2", "5.6-SNAPSHOT"));
     // load the measurements plugin
-    Gate.getCreoleRegister().registerDirectories(
-      new File("../plugins/measurements").toURI().toURL());
-    // load the SPARQL plugin
-    Gate.getCreoleRegister().registerDirectories(
-      new File("../plugins/sparql").toURI().toURL());
+    Gate.getCreoleRegister().registerPlugin(new Plugin.Maven("uk.ac.gate.mimir", "mimir-plugin-measurements", "5.6-SNAPSHOT"));
+    // load the sparql plugin
+    Gate.getCreoleRegister().registerPlugin(new Plugin.Maven("uk.ac.gate.mimir", "mimir-plugin-sparql", "5.6-SNAPSHOT"));
     
     QueryEngine qEngine = new MimirIndex(new File(args[0])).getQueryEngine();
     qEngine.setScorerSource(new Callable<MimirScorer>() {
@@ -470,21 +462,16 @@ public class Scratch {
    * @throws Exception sometimes 
    */
   public static void mainDirectIndexes(String[] args) throws Exception {
-    Gate.setGateHome(new File("gate-home"));
-    Gate.setUserConfigFile(new File("gate-home/user-gate.xml"));
+    // GATE, Mimir init
     Gate.init();
     // load the tokeniser plugin
-    Gate.getCreoleRegister().registerDirectories(
-      new File("gate-home/plugins/ANNIE-tokeniser").toURI().toURL());
+    Gate.getCreoleRegister().registerPlugin(new Plugin.Maven("uk.ac.gate.plugins", "annie", "8.5-SNAPSHOT"));
     // load the DB plugin
-    Gate.getCreoleRegister().registerDirectories(
-      new File("../plugins/db-h2").toURI().toURL());
+    Gate.getCreoleRegister().registerPlugin(new Plugin.Maven("uk.ac.gate.mimir", "mimir-plugin-dbh2", "5.6-SNAPSHOT"));
     // load the measurements plugin
-    Gate.getCreoleRegister().registerDirectories(
-      new File("../plugins/measurements").toURI().toURL());
-    Gate.getCreoleRegister().registerDirectories(
-      new File("../plugins/sparql").toURI().toURL());
-    
+    Gate.getCreoleRegister().registerPlugin(new Plugin.Maven("uk.ac.gate.mimir", "mimir-plugin-measurements", "5.6-SNAPSHOT"));
+    // load the sparql plugin
+    Gate.getCreoleRegister().registerPlugin(new Plugin.Maven("uk.ac.gate.mimir", "mimir-plugin-sparql", "5.6-SNAPSHOT"));
     
     MimirIndex mainIndex = new MimirIndex(new File(args[0]));
     QueryEngine qEngine = mainIndex.getQueryEngine();
