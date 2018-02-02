@@ -14,8 +14,8 @@ pipeline {
                 sh 'mvn -e clean install'
                 // build the webapp
                 dir('webapp/mimir-cloud') {
-                    sh './grailsw run-command cache-mimir-plugins'
-                    sh './grailsw prod war'
+                    sh './gradlew --console=plain runCommand -Pargs=cache-mimir-plugins'
+                    sh './gradlew --console=plain assemble'
                 }
             }
         }
@@ -46,10 +46,10 @@ pipeline {
             steps {
                 sh 'mvn -e -DskipTests source:jar javadoc:jar deploy'
                 dir('webapp/mimir-web-ui') {
-                    sh './gradlew publish'
+                    sh './gradlew --console=plain publish'
                 }
                 dir('webapp/mimir-web') {
-                    sh './grailsw publish'
+                    sh './gradlew --console=plain publish'
                 }
             }
             post {
