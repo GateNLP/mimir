@@ -8,7 +8,7 @@ class MimirUrlMappings {
 
     // This mapping for the indexManagement controller's "index" action
     // is considered to be the top-level "index URL" for each index.
-    // It *must* be mapped to a url path that ends with $indexId
+    // It *must* be mapped to a url path that includes $indexId
     // and the search and manage actions defined below must be at the
     // right locations relative to this, as this structure is assumed
     // by the mimir-connector and mimir-client packages.
