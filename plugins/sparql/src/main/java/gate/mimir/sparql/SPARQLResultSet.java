@@ -57,10 +57,12 @@ public class SPARQLResultSet {
   
 
   /**
-   * 
-   * The supplied input stream will be drained and closed.
-   * @param is
-   * @throws XMLStreamException
+   * Create a result set from an input stream (typically the HTTP response from
+   * a SPARQL endpoint).  The supplied input stream will be drained and closed.
+   *
+   * @param is the input stream that is a source for this result set
+   * @throws XMLStreamException if the stream cannot be opened by the XML
+   *         parser
    */
   public SPARQLResultSet(InputStream is) throws XMLStreamException {
     this(xmlInputFactory.createXMLStreamReader(is));
@@ -231,7 +233,7 @@ public class SPARQLResultSet {
   
   /**
    * The names of the bound variables, as returned by the SPARQL endpoint.
-   * @return
+   * @return the names of the variables (i.e. the columns) in this result set.
    */
   public String[] getColumnNames() {
     return variableNames;
@@ -241,7 +243,7 @@ public class SPARQLResultSet {
    * The values returned by the SPARQL endpoint. Each row is an array of String
    * values, each entry in the array being a value for the corresponding column 
    * (as returned by {@link #getColumnNames()}).  
-   * @return a bi-dimensional array of Strings, where the first index selects 
+   * @return a two-dimensional array of Strings, where the first index selects 
    * the row, and the second index selects the column. 
    */
   public String[][] getRows() {

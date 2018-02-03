@@ -50,19 +50,17 @@ import org.apache.log4j.Logger;
  * 
  * This {@link DelegatingSemanticAnnotationHelper} wraps another actual 
  * {@link SemanticAnnotationHelper} (the delegate). At search time, this helper
- * provides an extra synthetic feature (its name being the value of 
- * {@link SPARQLSemanticAnnotationHelper#SPARQL_QUERY_FEATURE_NAME}). The 
- * content of an {@link ConstraintType#EQ} constraint is interpreted as a SPARQL
- * query, which is executed against the SPARQL endpoint (see 
- * {@link #getSparqlEndpoint()}). Each row in the result set contains a set of
- * variable assignments, which are used to generate standard M&iacute;mir 
- * queries that are passed-on to the delegate.   
+ * provides an extra synthetic feature (its name being the value passed to 
+ * {@link SPARQLSemanticAnnotationHelper#setSparqlFeatureName}, or
+ * {@link SPARQLSemanticAnnotationHelper#DEFAULT_SPARQL_QUERY_FEATURE_NAME} by
+ * default). The content of an {@link ConstraintType#EQ} constraint is
+ * interpreted as a SPARQL query, which is executed against the SPARQL endpoint
+ * (see {@link #getSparqlEndpoint()}). Each row in the result set contains a
+ * set of variable assignments, which are used to generate standard
+ * M&iacute;mir queries that are passed-on to the delegate.   
  */
 public class SPARQLSemanticAnnotationHelper extends
                                            DelegatingSemanticAnnotationHelper {
-  /**
-   * 
-   */
   private static final long serialVersionUID = 3855212427922484546L;
 
 
@@ -117,7 +115,7 @@ public class SPARQLSemanticAnnotationHelper extends
   
   /**
    * See {@link #setQueryPrefix(String)}
-   * @return
+   * @return the configured query prefix.
    */
   public String getQueryPrefix() {
     return queryPrefix;
@@ -127,6 +125,8 @@ public class SPARQLSemanticAnnotationHelper extends
    * Sets the query prefix: a query fragment that, if set, gets prepended to 
    * all SPARQL queries sent to the end point. This could be used, for example,
    * for setting up a list of PREFIXes.
+   *
+   * @param queryPrefix the prefix to use.
    */
   public void setQueryPrefix(String queryPrefix) {
     this.queryPrefix = queryPrefix;
@@ -134,7 +134,7 @@ public class SPARQLSemanticAnnotationHelper extends
 
   /**
    * See {@link #setQuerySuffix(String)}.
-   * @return
+   * @return the configured query suffix
    */
   public String getQuerySuffix() {
     return querySuffix;
@@ -144,6 +144,8 @@ public class SPARQLSemanticAnnotationHelper extends
    * Sets the query suffix: a query fragment that, if set, gets appended to 
    * all SPARQL queries sent to the end point. This could be used, for example,
    * for setting up a LIMIT constraint.
+   *
+   * @param querySuffix the suffix to use.
    */  
   public void setQuerySuffix(String querySuffix) {
     this.querySuffix = querySuffix;
@@ -230,6 +232,10 @@ public class SPARQLSemanticAnnotationHelper extends
   /**
    * Custom de-serialisation method to ensure fields that did not exist in 
    * previous versions are initialised to the correct default values.
+   *
+   * @return this object.
+   * @throws ObjectStreamException never thrown but required by serialization
+   *         spec
    */
   private Object readResolve() throws ObjectStreamException {
     if(sparqlFeatureName == null){
@@ -323,9 +329,10 @@ public class SPARQLSemanticAnnotationHelper extends
   /**
    * Runs a query against the SPARQL endpoint and returns the results.
    * 
-   * @param query
-   * @return
-   * @throws XMLStreamException
+   * @param query the SPARQL query to execute
+   * @return the parsed result set
+   * @throws XMLStreamException if the result set cannot be parsed as XML
+   * @throws IOException if an I/O error occurs.
    */
   protected SPARQLResultSet runQuery(String query) throws IOException,
       XMLStreamException {

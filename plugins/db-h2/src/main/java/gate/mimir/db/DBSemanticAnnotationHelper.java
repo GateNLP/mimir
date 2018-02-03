@@ -67,6 +67,7 @@ public class DBSemanticAnnotationHelper extends AbstractSemanticAnnotationHelper
      * found (i.e. this combination of features has not been seen before), it 
      * inserts a new row in the level 1 table, and returns the ID for it.  
      * @see java.util.concurrent.Callable#call()
+     * @return the ID, either looked up in the DB or freshly generated.
      */
     @Override
     public Long call() throws Exception {
@@ -113,6 +114,7 @@ public class DBSemanticAnnotationHelper extends AbstractSemanticAnnotationHelper
      * found (i.e. this combination of features has not been seen before), it 
      * inserts a new row in the level 2 table, and returns the ID for it.  
      * @see java.util.concurrent.Callable#call()
+     * @return the ID, either looked up in the DB or freshly generated.
      */
     @Override
     public Long call() throws Exception {
@@ -294,6 +296,9 @@ public class DBSemanticAnnotationHelper extends AbstractSemanticAnnotationHelper
    * is the only value that makes sense for normal annotation-mode helpers, but
    * it may be useful to set it to false for document-mode helpers where not
    * every document has the target feature(s).
+   *
+   * @param indexNulls should "null" instances be indexed (true) or ignored
+   *         (false)
    */
   public void setIndexNulls(boolean indexNulls) {
     this.indexNulls = indexNulls;
@@ -303,6 +308,8 @@ public class DBSemanticAnnotationHelper extends AbstractSemanticAnnotationHelper
    * Should this helper index "null" instances, where none of the configured
    * features has a value set in the target (annotation or document) feature
    * map?
+   *
+   * @return should this helper index "null" instances?
    */
   public boolean isIndexNulls() {
     return indexNulls;
@@ -535,7 +542,8 @@ public class DBSemanticAnnotationHelper extends AbstractSemanticAnnotationHelper
    * possible, we're creating MEMORY tables (with the indexes stored in RAM) 
    * and HASH indexes for all data columns.
    * 
-   * @throws SQLException 
+   * @param indexer the AtomicIndex that "owns" this annotation helper.
+   * @throws SQLException if an error occurs when creating the DB.
    */
   protected void createDb(AtomicAnnotationIndex indexer) throws SQLException {
     Statement stmt = dbConnection.createStatement();
@@ -716,8 +724,9 @@ public class DBSemanticAnnotationHelper extends AbstractSemanticAnnotationHelper
    * {@link #tableBaseName} as a base name, to which it prepends the supplied 
    * prefix (if any), it appends the supplied suffix(if any). The constructed 
    * string is then surrounded with double quotes.  
-   * @param suffix
-   * @return
+   * @param prefix optional prefix to prepend to the table name
+   * @param suffix optional suffix to append to the table name
+   * @return quoted table name suitable for use in SQL statements.
    */
   protected String tableName(String prefix, String suffix) {
     StringBuilder str = new StringBuilder("\"");
@@ -885,9 +894,10 @@ public class DBSemanticAnnotationHelper extends AbstractSemanticAnnotationHelper
    * cached transient statements!)
    * For level-2 statements, it does not set the L1_ID parameter (i.e. it starts 
    * with the parameter at position 2).
-   * @param stmt
-   * @param annotation
-   * @throws SQLException 
+   * @param stmt the statement whose parameters are to be set
+   * @param annFeats features from the annotation (or document, for doc-mode
+   *         helpers) to use as the source of column values
+   * @throws SQLException if an error occurs (e.g. type mismatch)
    */
   protected void setStatementParameters(PreparedStatement stmt, 
           FeatureMap annFeats) throws SQLException {
@@ -1327,7 +1337,7 @@ public class DBSemanticAnnotationHelper extends AbstractSemanticAnnotationHelper
   
   /**
    * Close a prepared statement to help free resources
-   * @param stmt
+   * @param stmt the statement to close
    * @return null, as a utility for easily nullifying the original object
    */
   private PreparedStatement closeAndNullify(PreparedStatement stmt) {

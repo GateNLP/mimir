@@ -269,6 +269,9 @@ public class AnnotationTemplateCache {
    * Given an annotation, obtain the associated Level-1 ID. If a cache miss 
    * occurs, the provided callable will be called to obtain a new ID, which will
    * then be stored in the cache, and returned.
+   * @param annFeats the features of the annotation
+   * @param idGenerator callable that returns a new ID if one is required
+   * @return the level 1 ID for this set of features, either cached or newly generated
    * @throws Exception if the provided callable generates an exception. 
    */
   public long getLevel1Id(FeatureMap annFeats, Callable<Long> idGenerator) throws Exception {
@@ -290,6 +293,11 @@ public class AnnotationTemplateCache {
    * associated level-2 ID. If a cache miss occurs, the provided callable will
    * be used to generate a new ID, which is then stored in the cache and 
    * returned. 
+   * @param level1Tag the level-1 ID
+   * @param annFeats the features of the annotation
+   * @param idGenerator callable that returns a new ID if one is required
+   * @return the level 2 ID for this level 1 ID and set of features, either
+   *         cached or newly generated
    * @throws Exception if the provided callable generates an exception. 
    */
   public Long getLevel2Id(Long level1Tag, FeatureMap annFeats, 
@@ -312,6 +320,12 @@ public class AnnotationTemplateCache {
    * the provided callable will be used to generate a new ID, which is then 
    * stored in the cache and returned.
    *  
+   * @param level1tag the level-1 ID
+   * @param level2tag the level-2 ID
+   * @param length the mention length in tokens
+   * @param idGenerator callable that returns a new ID if one is required
+   * @return the level 3 mention ID for this combination of levels 1, 2 and
+   *         length.
    * @throws Exception if the provided callable generates an exception. 
    */
   public Long getLevel3Id(Long level1tag, Long level2tag, int length, 
@@ -365,7 +379,9 @@ public class AnnotationTemplateCache {
   /**
    * Gets the ratio of level 1 cache hits from all accesses.
    * 
-   * @return
+   * @return the proportion of L1 ID requests that could be serviced by the
+   *         cache rather than by generating a new ID - the closer this number
+   *         is to 1 the "denser" the level 1 feature space.
    */
   public double getL1CacheHitRatio() {
     if(l1CacheHits == 0 && l1CacheMisses == 0) {
@@ -378,7 +394,9 @@ public class AnnotationTemplateCache {
   /**
    * Gets the ratio of level 2 cache hits from all accesses.
    * 
-   * @return
+   * @return the proportion of L2 ID requests that could be serviced by the
+   *         cache rather than by generating a new ID - the closer this number
+   *         is to 1 the "denser" the level 2 feature space.
    */
   public double getL2CacheHitRatio() {
     if(l2CacheHits == 0 && l2CacheMisses == 0) {
@@ -391,7 +409,8 @@ public class AnnotationTemplateCache {
   /**
    * Gets the ratio of level 3 (mentions) cache hits from all accesses.
    * 
-   * @return
+   * @return the proportion of L3 ID requests that could be serviced by the
+   *         cache rather than by generating a new ID.
    */
   public double getL3CacheHitRatio() {
     if(l3CacheHits == 0 && l3CacheMisses == 0) {
