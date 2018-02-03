@@ -53,18 +53,18 @@ publishing {
           delegate.url "https://gate.ac.uk/mimir"
 
           delegate.developers {
-            developer {
-              id "gate-team"
-              name "GATE Team"
-              email "gate-developers@lists.sourceforge.net"
+            delegate.developer {
+              delegate.id "gate-team"
+              delegate.name "GATE Team"
+              delegate.email "gate-developers@lists.sourceforge.net"
             }
           }
 
           delegate.licenses {
-            license {
-              name "GNU Lesser General Public License (LGPL), Version 3"
-              url "http://www.gnu.org/licenses/lgpl.html"
-              distribution "repo"
+            delegate.license {
+              delegate.name "GNU Lesser General Public License (LGPL), Version 3"
+              delegate.url "http://www.gnu.org/licenses/lgpl.html"
+              delegate.distribution "repo"
             }
           }
         }
