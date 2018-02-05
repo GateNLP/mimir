@@ -7,7 +7,7 @@ buildscript {
     }
 }
 
-version "5.6-SNAPSHOT"
+version "6.0-SNAPSHOT"
 group "uk.ac.gate.mimir"
 
 apply plugin: 'java'
