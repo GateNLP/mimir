@@ -12,25 +12,15 @@ the indexes would be limited.
 In order to build and run a \Mimir{} server you will need the following pieces
 of software installed on your system:
 \begin{description}
-  \item[Java Development Kit] version 7 or newer. If you don't have one, you can
+  \item[Java Development Kit] version 8 or newer. If you don't have one, you can
   download one from 
   Oracle\footnote{\url{http://www.oracle.com/technetwork/java/javase/downloads/index.html}}.
   Make sure you get the JDK and not the Java Runtime Environment (JRE), as that
   would not be suitable. Once installed, make sure your \verb!JAVA_HOME!
   environment variable points to the location where the JDK was installed.  Make
   sure that the \verb!$JAVA_HOME/bin! location is on your \verb!PATH!.
-  \item[Apache ANT] version 1.8.1 or later. You can download it from
-  \url{http://ant.apache.org/}. Once installed, make sure your \verb!ANT_HOME!
-  environment variable points to the top-level directory of your installation.
-  Make  sure that the \verb!$ANT_HOME/bin! location is on your \verb!PATH!.
-  \item[Grails] version 2.5.4. You can download this from
-  \url{http://grails.org}. Once installed, make sure your \verb!GRAILS_HOME!
-  environment variable points to the top-level directory of your installation.
-  Make sure that the \verb!$GRAILS_HOME/bin! location is on your \verb!PATH!.
-  \textbf{Note that \Mimir\ \mimirversion\ requires Grails 2.5.4, it will not
-  work with 3 or later}. Earlier versions of \Mimir\ used different versions
-  of Grails, make sure you are reading the documentation for the specific
-  version you are trying to run.
+  \item[Apache Maven] version 3.3 or later. You can download it from
+  \url{http://maven.apache.org/}.
   \item[Working Internet Connection] The next step, described below, is the
   building of the \Mimir{} library. This starts by automatically downloading all
   the required dependencies, so it requires a working Internet connection. Once
@@ -56,34 +46,23 @@ Commands that you have to execute are formatted in a distinctive font
 \begin{enumerate}
   \item {\bf Download the \Mimir{} sources}, if you do not already have a copy.
   You can get either an archive of the entire source tree, or check it out
-  directly from our subversion repository. Instructions for doing so are
+  directly from our GitHub repository. Instructions for doing so are
   available on \Mimir{}'s web page at:
   \url{http://gate.ac.uk/mimir/index.html}.
-  If you downloaded the .tar.gz archive on Windows we recommend not using the
-  popular Winzip utility, as that sometimes mangles the file names. 
-  7-Zip\footnote{\url{http://www.7-zip.org/}} and the Cygwin ``tar'' utility are
-  known to work correctly in this respect, and other free archiving tools are 
-  available that support the {\tt .tar.gz} format.
   Unpacking a source archive (or checking out the source code with subversion)
-  will create a new directory called {\tt mimir} containing all the source
-  files.
+  will create a new directory called {\tt mimir-(version)} (zip) or {\tt mimir}
+  (Git) containing all the source files.
   \item {\bf Build \Mimir{}:} change to the top level directory where you
   unpacked the downloaded \Mimir{} sources. If you can see the {\tt mimir-core},
   {\tt mimir-client}, {\em etc.} directories, then you are in the correct
-  directory. Execute the \cmd{ant} command. This will download all the
-  required dependencies, compile all the \Mimir{} libraries, and build the {\tt
-  mimir-web} Grails plugin.
+  directory. Execute the command \cmd{mvn install}. This will download all the
+  required dependencies and compile all the \Mimir{} libraries.
   
-  If you have multiple Grails versions installed, and Grails 2.5.4 is not the
-  default, you must give priority to Grails 2.5.4.  Do so by executing
-  \cmd{export GRAILS\_HOME=/path/to/grails-2.5.4}, and then use the following:
-  \cmd{ant -Dgrails.bin=\$GRAILS\_HOME/bin/grails} (instead of \cmd{ant}) to
-  override the default Grails settings.
   \item {\bf Run the mimir-cloud application:}  change to the {\tt
-  mimir-cloud} directory (\cmd{cd mimir-cloud}) and execute the \cmd{grails prod
-  run-app} command. This will start the application and will notify you which
-  URL you should use in your browser to access it (normally
-  \url{http://localhost:8080/mimir-cloud/}).
+  webapp/mimir-cloud} directory and execute the command \cmd{./grailsw run-app}
+  on Linux/Mac or \cmd{grailsw.bat run-app} on Windows. This will start the
+  application and will notify you which URL you should use in your browser to
+  access it (normally \url{http://localhost:8080/}).
 \end{enumerate}
 %
 \section{Create, Populate, and Search an Index}
@@ -107,10 +86,10 @@ Commands that you have to execute are formatted in a distinctive font
     $\rightarrow$ File $\rightarrow$ Load ANNIE System $\rightarrow$ with
     Defaults).
     \item Open the CREOLE Plugin Manager ((Main Menu $\rightarrow$ File
-    $\rightarrow$ Manage CREOLE Plugins), and add a new plugin directory
-    pointing at the {\tt mimir-client} directory inside the \Mimir{}
-    distribution. Make sure the new plugin is loaded by checking the
-    appropriate check-box.
+    $\rightarrow$ Manage CREOLE Plugins), and load the Maven plugin with
+    group ID {\tt uk.ac.gate.mimir}, artifact ID {\tt mimir-indexing-plugin}
+    and version {\tt \mimirversion}. Make sure the new plugin is loaded by
+    checking the appropriate check-box.
     \item Load a new instance of {\em \Mimir{} Indexing PR} (Main Menu
     $\rightarrow$ File $\rightarrow$ New Processing Resource $\rightarrow$
     \Mimir{} Indexing PR), and add it to the end of the ANNIE application.
@@ -132,17 +111,15 @@ Commands that you have to execute are formatted in a distinctive font
   available on the index administration page.
 \end{enumerate}
 
-To shut down the running web application, create a file named {\tt
-.kill-run-app} in the {\em mimir-cloud} directory, and wait for the application
-to shut itself down. If that does not work (creating files with `.' at the start
-of their names is sometimes difficult on Windows), then you can just focus the
+To shut down the running web application, focus the
 command prompt window where you started the application and interrupt it by
-pressing the {\tt Ctrl-C} key combination. This might, on rare occasions,
-invalidate the database of the \Mimir{} web application, but it would not affect
-any indexes you have created (they would simply disappear from the list and
-you would need to re-import them).
+pressing the {\tt Ctrl-C} key combination.  On Windows you may be asked
+``Interrupt bactch job (Y/N)?'' -- answer ``N''.
 
 To deploy the \Mimir{} web application to an application server (such as Apache
-Tomcat) run the \cmd{grails prod war} command in the mimir-cloud directory. A
+Tomcat) run the \cmd{gradlew assemble} command in the mimir-cloud directory. A
 {\tt mimir-cloud-\{version\}.war} file will be created for you in the {\tt
-target} sub-directory.
+build/libs} sub-directory.  Alternatively, ready-built WAR files are available
+for release versions from \url{https://github.com/GateNLP/mimir/releases} and
+for nightly snapshots from the GATE Jenkins continuous integration server at
+\url{https://jenkins.gate.ac.uk/job/Mimir/}.

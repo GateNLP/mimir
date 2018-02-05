@@ -291,7 +291,7 @@ indexing via HTTP POST requests that include the document in Java serialised
 format.  The easiest way to make use of this API is via GCP (the GATE Cloud
 Paralleliser batch processing tool) using a \lstinline!MimirOutputHandler!.
 This GCP output handler makes use of the
-\lstinline!gate.mimir.index.MimirConnector! (in the {\tt mimir-client} module)
+\lstinline!gate.mimir.index.MimirConnector! (in the {\tt mimir-connector} module)
 to actually make the remote call, and you can use the same API in your own
 code.  To add a GATE document to an open index simply call:
 \begin{lstlisting}[breaklines]

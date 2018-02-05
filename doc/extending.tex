@@ -192,41 +192,45 @@ via one of the abstract base classes.  To make your helper available to \Mimir\
 requires a couple of extra steps.
 
 Helper implementations are loaded into \Mimir\ using the standard GATE CREOLE
-plugin mechanism.  The helper class or classes must be packaged up into a JAR
-file which is placed in a directory containing a simple {\tt creole.xml} file.
-\begin{lstlisting}[language=XML]
-<CREOLE-DIRECTORY>
-  <JAR>my-plugin.jar</JAR>
-</CREOLE-DIRECTORY>
+plugin mechanism.  The simplest approach is to create a standard GATE plugin
+with a Maven POM file that uses the {\tt gate-plugin-base} parent, install
+the plugin to your local Maven cache or deploy it to a repository, then
+configure it as a dependency in your {\tt application.groovy} with
+\begin{lstlisting}
+gate {
+  mimir {
+    plugins {
+      myPlugin {
+        group = "com.example.mygroup"
+        artifact = "my-helper"
+        version = "0.1-SNAPSHOT"
+      }
+    }
+  }
+}
 \end{lstlisting}
 
-This directory is now a CREOLE plugin that can be loaded into \Mimir, for
-example by using the configuration options described in
-Section~\ref{sec:admin:config}.
+as described in Section~\ref{sec:admin:config}.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Registering new Scorers}
 \label{sec:extend:scorers}
 
-The set of scoring algorithms made available in the admin interface is specified
-in the application configuration file (described in
-Section~\ref{sec:admin:config}). The default configuration includes the
-following options:
+The set of scoring algorithms made available in the admin interface is obtained
+by the {\tt mimir-web} plugin by querying a service defined in the host
+application.  For {\tt mimir-cloud} this is
+{\tt grails-app/services/gate/mimir/cloud/MimirScorerService.groovy}.
+
+The default configuration includes the following scorers:
 \begin{lstlisting}[language=Java]
-scorers.'Count Scoring' = {
-  new DelegatingScoringQueryExecutor(new CountScorer())
-}
-scorers.'TF.IDF' = {
-  new DelegatingScoringQueryExecutor(new TfIdfScorer())
-}
-scorers.'BM25' = {
-  new DelegatingScoringQueryExecutor(new BM25Scorer())
-}
-scorers.'Hit Length Scoring' = {
-  new BindingScorer()
-}
+def scorers = [
+  'Count Scoring':      { -> new DSQE(new CountScorer()) },
+  'TF.IDF':             { -> new DSQE(new TfIdfScorer()) },
+  'BM25':               { -> new DSQE(new BM25Scorer()) },
+  'Hit Length Scoring': { -> new BindingScorer() },
+]
 \end{lstlisting}
 
-Each declaration maps a Groovy closure to the name of a scorer. The closure must
+Each entry maps a Groovy closure to the name of a scorer. The closure must
 return an object implementing the
 \lstinline!gate.mimir.search.score.MimirScorer! interface, which itself extends
 the MG4J interface \lstinline!it.unimi.dsi.mg4j.search.score.DelegatingScorer!.
@@ -234,12 +238,10 @@ the MG4J interface \lstinline!it.unimi.dsi.mg4j.search.score.DelegatingScorer!.
 \Mimir{} provides the
 \lstinline!gate.mimir.search.score.DelegatingScoringQueryExecutor! class which
 can be used to wrap one of the scorer implementations provided by MG4J. If none
-of those are suitable, you can write your own custom implementations and make
-them available to \Mimir{} in the form of a GATE CREOLE plugin. This will ensure
-the new classes are added to the classpath and can be found by the system. See
-Section~\ref{sec:extend-package-plugins} for a description of how to declare new
-plugins, and Section~\ref{sec:admin:config} for information about loading
-additional plugins.
+of those are suitable, you can write your own custom implementations, either
+under {\tt src/main/groovy} of your application or by putting them in their own
+library and adding a suitable dependency to {\tt build.gradle}, and edit the
+{\tt MimirScorerService} to expose them under appropriate names.
  
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -253,22 +255,36 @@ Grails application.
 
 \subsection{Installing the \Mimir\ Plugin}
 
-The \Mimir\ plugin is installed like any other Grails plugin, by running
-{\tt grails package-plugin} in the {\tt mimir-web} directory to
-create a plugin zip file and then
-{\tt grails install-plugin grails-mimir-web-\{version\}.zip} in your
-application's base directory to install the plugin into your application.  On
-installation the plugin adds a number of files to the host application:
+Both snapshot and release versions of the \Mimir\ plugin are published to
+the standard GATE Maven repository, and can be installed into your own
+Grails application (3.3 or later) in the normal way by adding a dependency
+to {\tt build.gradle}:
+\begin{lstlisting}[escapechar=*]
+repositories {
+    // ...
+    maven { url "http://repo.gate.ac.uk/content/groups/public" }
+}
+
+dependencies {
+    // ...
+    compile "uk.ac.gate.mimir:mimir-web:*\mimirversion*"
+}
+\end{lstlisting}
+
+After installing the plugin into your app you should run
+\cmd{./grailsw mimir-config}.  This adds a number of files to the host
+application:
 
 \bde
-\item[grails-app/conf/MimirConfig.groovy] a default configuration file for
-  \Mimir\ settings, which can be customised as described in
-  section~\ref{sec:admin:config}.
-\item[grails-app/conf/MimirUrlMappings.groovy] a default set of URL mappings
-  for \Mimir\ controllers.  These are discussed in more detail below.
-\item[web-app/WEB-INF/gate-home] a default GATE home directory, containing user
-  and site configuration files and the default query tokeniser application, as
-  required by the template configuration file.
+\item[grails-app/conf/application.groovy] default \Mimir\ settings are appended
+  to the end of this file (which is created if it did not previously exist).
+  These can be customised as described in section~\ref{sec:admin:config}.
+\item[grails-app/controllers/(default package)/MimirUrlMappings.groovy] a
+  default set of URL mappings for \Mimir\ controllers.  These are discussed in
+  more detail below.
+\item[grails-app/services/(default package)/MimirScorerService.groovy] a
+  Grails service implementing {\tt ScorerSource}, which defines the default
+  set of available scorers.
 \ede
 
 \subsection{URL Mappings}
@@ -306,6 +322,8 @@ library, then you must make sure that:
 \item the names of the actions in the controllers above must not be changed.
 \eit 
 
+More detail is provided in the comments in the default generated mapping file.
+
 \subsection{Security Considerations}
 
 There are a number of established and mature Grails plugins that implement user
@@ -316,9 +334,9 @@ production deployments you may wish to consider any or all of the following.
 
 \begin{itemize}
 \item Place your application behind an Apache HTTPD or other similar front-end
-  server, and proxy only those URLs that need to be public (/css, /gwt,
-  /images, /plugins, /\{yourindex\}/search, etc.)
-\item Install a security plugin such as spring-security-core or nimble, and
+  server, and proxy only those URLs that need to be public (/assets,
+  /\{yourindex\}/search, etc.)
+\item Install a security plugin such as spring-security-core, and
   restrict the \Mimir\ pages to certain users.  For example the /admin pages
   could be restricted to administrative users, the Web UI pages to registered
   searchers, etc.  This is how the {\tt mimir-cloud} application is set up.
@@ -327,13 +345,11 @@ production deployments you may wish to consider any or all of the following.
   master \Mimir\ server.
 \end{itemize}
 
-Note that if you use user authentication on the XML search API or the remote
-protocol then you will need to modify the default client code to authenticate
-itself appropriately.  For example if you require HTTP basic authentication for
-the search or manage URLs then you will need to configure the master \Mimir\
-server that uses this as a remote to make it pass the relevant Authorization
-HTTP header.  The remote protocol uses the {\tt WebUtils} class in
-{\tt mimir-client} to make its HTTP calls, and there is a subclass of this
-class that is able to provide basic authentication headers, you can wire this
-in by overriding the definition of the webUtilsManager Spring bean supplied by
-the \Mimir\ plugin -- see the plugin source code for full details.
+The default \Mimir\ plugin can handle remote indexes that use HTTP {\em basic}
+authentication, but if you use another authentication mechanism on the XML
+search API or the remote protocol then you will need to modify the default
+client code to authenticate itself appropriately.  The remote protocol uses the
+{\tt WebUtils} class in {\tt mimir-client} to make its HTTP calls, you would
+need to subclass this to implement your authentication method and wire it in by
+overriding the definition of the webUtilsManager Spring bean supplied by the
+\Mimir\ plugin -- see the plugin source code for full details.

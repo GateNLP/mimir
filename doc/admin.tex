@@ -23,19 +23,22 @@ normalised into SI units so can retrieve annotations that express the same
 measurement in different terms (e.g. an annotation for ``90 seconds'' would
 match a query for ``1 to 2 minutes'').
 
-\item[mimir-client] The client side of the \Mimir\ remote protocol, to support
-distributed indexing and querying.
+\item[mimir-connector] Java library to allow indexing of GATE documents into
+a \Mimir{} index.
 
-\item[mimir-web] A Grails\footnote{\url{http://grails.org}} plugin providing
+\item[mimir-client] The client side of the \Mimir\ remote protocol, to support
+distributed querying.
+
+\item[webapp/mimir-web] A Grails\footnote{\url{http://grails.org}} plugin providing
 both the user interface to create and query indexes over the web, and also the
 server side of the remote protocol to expose several distributed \Mimir\
 indexes as a single {\em federated} index for clients.  This is provided as a
 plugin rather than an application to make it more easily customisable.
 
-\item[mimir-cloud] An example Grails application, that uses the {\tt mimir-web}
+\item[webapp/mimir-cloud] An example Grails application, that uses the {\tt mimir-web}
 plugin and also includes security support. This is the exact implementation used
-for \Mimir{} servers supplied on the GATECloud.net
-platform\footnote{\url{https://gatecloud.net}: a platform for running GATE-based
+for \Mimir{} servers supplied on the GATE Cloud
+platform\footnote{\url{https://cloud.gate.ac.uk}: a platform for running GATE-based
 processes on the cloud.}. This application should be suitable without any
 modifications for most users.
 \end{description}
@@ -82,25 +85,21 @@ to make it mode suitable to your actual usage scenario.
 
 \subsection{Binary Distribution}
 
-Starting with version 5.2, a pre-built WAR of {\tt mimir-cloud} is available
-for download from \url{https://sourceforge.net/projects/gate/files/}.  This can
-be run using any standard Java servlet container, such as Tomcat or Jetty.  WAR
-files for nightly snapshot builds can be downloaded from
-\url{http://jenkins.gate.ac.uk/job/GATEMimir-Nightly/}.
+Starting with version 6.0, a pre-built WAR of {\tt mimir-cloud} is available
+for download from
+\url{https://github.com/GateNLP/mimir/releases}\footnote{Earlier versions back
+to 5.2 are available from \url{https://sourceforge.net/projects/gate/files/}}.
+This can be run using any standard Java servlet container, such as Tomcat or
+Jetty.  WAR files for nightly snapshot builds can be downloaded from
+\url{http://jenkins.gate.ac.uk/job/Mimir/}.
 
 \subsection{Prerequisites}
 
 To build your own \Mimir\ web application you will need:
 \begin{itemize}
-\item A Java 7 or later JDK.  \Mimir\ has been tested with the Sun/Oracle and OpenJDK
+\item A Java 8 or later JDK.  \Mimir\ has been tested with the Sun/Oracle and OpenJDK
   JVMs on Linux and Mac OS X.
-\item Apache Ant 1.8.1 or later.
-\item The Grails framework: version \mimirversion\ of the \Mimir\ plugin was
-  developed using Grails version 2.5.4. Other versions of Grails are not
-  guaranteed to work, so you should use the same one. You need to set the
-  JAVA\_HOME environment variable to  point to your JDK, the GRAILS\_HOME
-  environment variable to point to your Grails installation and add
-  \$GRAILS\_HOME/bin to your PATH.
+\item Apache Maven 3.3 or later
 \end{itemize}
 
 While not strictly a pre-requisite, \Mimir\ performs much better on 64-bit
@@ -108,97 +107,95 @@ systems than on 32-bit ones, partly due to simply being able to assign more
 memory to the process, but also because the larger address space allows MG4J to
 memory-map many of the files that make up the index.
 
-To run a local instance of \Mimir\ you can use the standard \cmd{grails prod
-run-war} command, but to deploy a production instance you will need a separate
-servlet container such as Tomcat.
+To run a local instance of \Mimir\ you can use the standard \cmd{./grailsw
+run-app} command, but to deploy a production instance you will need a
+separate servlet container such as Tomcat.
 
 \subsection{Building}
 
-There is a top-level Ant build.xml file that should build all the modules in
-the correct order. To do that simply change to the top level directory
-containing the \Mimir\ source code, and run the \cmd{ant} command. To perform
-the same build process manually, you need to change to the following directories
-and run the following {\tt ant} commands in this order:
-\begin{enumerate}
-\item {\tt mimir-core}: \cmd{ant publish}
-\item {\tt mimir-client}: \cmd{ant publish}
-\item {\tt plugins}: run \cmd{ant} in each sub-directory of the plugins
-  directory in turn (order is not important here, the plugins do not depend on
-  one another).
-\item {\tt mimir-web}: \cmd{grails compile} followed by \cmd{grails
-  compile-gwt-modules}.
-\end{enumerate}
+Building \Mimir\ is a two step process.  The core Java library, remote connector
+and plugins are built using Maven, the web components (which depend on the core)
+are built using Grails 3.3 via the included wrapper script -- you do not need
+a separate installation of Gradle or Grails.
+
+There is a top-level Maven pom file to build all the core components, you can
+run this with the standard \cmd{mvn install} command.  Once the core components
+are built you can run the {\tt mimir-cloud} web application using
+\cmd{./grailsw run-app} in the mimir-cloud directory.
 
 The next step is to configure the {\tt mimir-cloud} web application, and is
 described in the following section.
 
 \subsection{Configuring}\label{sec:admin:config}
 
-When the \Mimir\ Grails plugin is installed into a Grails application, it
-creates a base configuration file at {\tt grails-app/conf/MimirConfig.groovy}.
+When the \Mimir\ Grails plugin is installed into a Grails application, the
+\cmd{./grailsw mimir-config} command adds a base set of configuration
+options to the application's {\tt grails-app/conf/application.groovy}.
 This file contains a number of settings that affect the running of the \Mimir\
 components. In many cases the default options will be sufficient, but you should
 nevertheless check the configuration and make sure it is appropriate for your
 needs.
 
-You can modify the {\tt MimirConfig.groovy} file directly, or you can use the
+You can modify the {\tt application.groovy} file directly, or you can use the
 ``external configuration'' mechanism in Grails to override these settings at
-runtime.  The {\tt MimirConfig.groovy} settings are merged into the main Grails
-configuration with the prefix {\tt gate.mimir}, so for example to override the
-{\tt queryTokeniserGapp} setting you would set
-{\tt gate.mimir.queryTokeniserGapp = "..."} in the external configuration.
+runtime in a separate {\tt application.groovy} in the working directory.
 
 \begin{lstlisting}
-gateInit {
-  gateHome = "WEB-INF/gate-home"
-  userConfigFile = "WEB-INF/gate-home/user.xml"
+gate {
+  mimir {
+    plugins {
+      h2 {
+        group = "uk.ac.gate.mimir"
+        artifact = "mimir-plugin-dbh2"
+      }
+      myCustomPlugin = "file:/data/mimir/plugins/myCustomPlugin"
+    }
+  }
 }
 \end{lstlisting}
 
-Since \Mimir\ is based on GATE, the plugin initialises the GATE environment at
-start-up.  These parameters control the initialisation process.  In most cases
-you can leave the values at their defaults, which use a deliberately cut-down
-set of GATE configuration files installed into {\tt web-app/WEB-INF} by the
-\Mimir\ Grails plugin.  The available parameters are gateHome, pluginsHome,
-siteConfigFile, userConfigFile and builtinCreoleDir, which correspond to the
-standard settings on the
-\htlink{http://hudson.gate.ac.uk/job/GATE-Nightly/javadoc/gate/Gate.html}{Gate}
-class, and their values can be either absolute URLs (such as
-\verb|file:/opt/gate|) or paths which are taken relative to the web application
-(i.e. the web-app directory of the Grails application).
-
-\begin{lstlisting}
-plugins {
-  h2 = "../plugins/db-h2"
-  myCustomPlugin = "file:/data/mimir/plugins/myCustomPlugin"
-}
-\end{lstlisting}
-
-This section specifies the \Mimir\ plugins that should be loaded, and determines
-the kinds of annotation helpers you will be able to use in your indexes.  You
-generally need at least  the standard {\tt db-h2} plugin to be able to do
-anything useful with \Mimir, and you may want the {\tt measurements} plugin as
-well if you will be searching on Measurement annotations and/or the {\tt sparql}
-plugin if you have an external knowledge base. 
+\Mimir\ uses the GATE plugin mechanism to allow different annotation helpers to
+be added dynamically at runtime.  This section of the configuration specifies
+which plugins should be loaded when the web application starts up, and
+determines the kinds of annotation helpers you will be able to use in your
+indexes.  You generally need at least  the standard {\tt db-h2} plugin to be
+able to do anything useful with \Mimir, and you may want the {\tt measurements}
+plugin as well if you will be searching on Measurement annotations and/or the
+{\tt sparql} plugin if you have an external knowledge base. 
 Section~\ref{sec:indexing:helpers} has more information about the standard
 annotation helpers, and section~\ref{sec:extend:helpers} discusses how to
 implement your own custom ones.
 
-\Mimir\ uses the GATE plugin mechanism, so \Mimir\ plugins are actually
-very simple CREOLE plugins\footnote{See
-\url{http://gate.ac.uk/userguide/chap:creole-model}.}, used to add a set of
-{\tt jar} files to the current classpath.
- 
-Plugins can be specified either as absolute URLs or as paths relative to the
-Grails application base directory.  Absolute URLs will be loaded as such both
-in {\tt run-app} and in WAR deployments, but plugins specified as relative
-paths are treated slightly differently.  They will be loaded directly from the
-specified paths in {\tt run-app}, but when building a WAR file the referenced
-plugins will be packaged inside the WAR file and loaded from there at run-time.
+Plugins can be specified in one of three ways:
+\begin{itemize}
+\item as a set of Maven co-ordinates ``group'', ``artifact'' and an optional
+  ``version'', which will load the plugin from Maven repositories in the
+  normal way.  If ``version'' is omitted it defaults to the version of the
+  {\tt mimir-web} plugin, so the plugin versions that match this build of
+  \Mimir{}.  The standard plugins are listed (commented out) in the sample
+  configuration created by {\tt mimir-config}, uncomment the ones you need.
+\item as an absolute URL string (the {\tt myCustomPlugin} example above),
+  which will load a directory-based GATE plugin from the given location.
+\item as a relative path string, which will be resolved against the web
+  application root to form a URL which is then loaded as a directory-based
+  plugin.
+\end{itemize}
+
+Maven-style plugins are typically resolved at runtime by downloading from
+repositories over the network, but {\tt mimir-web} provides a utility to cache
+the plugins that are referenced by a configuration, along with their transitive
+dependencies, so they can be loaded from within the web application rather than
+downloaded from the internet (this is useful if, for example, your \Mimir\ is
+running inside a locked-down firewall and cannot make outgoing web
+connections).  To do this, once you have configured your plugins but before you
+build your WAR file, run {\tt ./grailsw run-command cache-mimir-plugins} in
+your {\tt mimir-cloud} directory.  This will create a cache in {\tt
+src/main/webapp} which will be bundled into your WAR file when you build it.
 
 \begin{lstlisting}
+// ...
 queryTokeniserGapp = 
-    "WEB-INF/gate-home/default-query-tokeniser.xgapp"
+    "file:/path/to/query-tokeniser.xgapp"
 \end{lstlisting}
 
 Whereas GATE's usual data model deals with annotations in terms of their {\em
@@ -207,89 +204,57 @@ character} offsets from the start of the document, \Mimir\ deals in terms of
 before they can be matched against the index, and the tokenisation applied to
 the queries must match that applied to the documents that have been indexed.
 The \Mimir\ Grails plugin uses a saved GATE application state (gapp file) to
-perform query tokenisation, the location of which is specified here.  Again,
-the location can be an absolute URL or a path relative to the web-app
-directory, and the default value refers to a simple app installed by the
-\Mimir\ Grails plugin that contains a single ANNIE tokeniser with its default
-settings.
+perform query tokenisation, the location of which is specified here.  By default,
+\Mimir\ uses the standard ANNIE English tokeniser with its default parameters.
 
 If your tokenisation requirements are more complex, you can provide your own
-saved application, or alternatively you can use your application's {\tt
-resources.xml} or {\tt resources.groovy} to override the definition of the
-Spring bean named ``queryTokeniser'' -- this bean must define a GATE
-LanguageAnalyser that will produce annotations of type Token in the default
-annotation set.
-
-Note that because of the special handling at build time of plugins referenced
-as relative paths (see above), if you want to load additional plugins into a
-WAR-packaged \Mimir\ using run-time settings in an external configuration file,
-then the plugins must be specified using absolute URLs, i.e.
-{\tt gate.mimir.plugins.custom = "file:/opt/mimir/plugins/custom"}.  Relative
-plugin paths are ignored at run-time by \Mimir\ when running from a WAR
-deployment.  However, since \Mimir\ plugins are simply standard GATE CREOLE
-plugins and the \Mimir\ Grails plugin initialises GATE Embedded using Spring
-you can load extra plugins relative to your web app by using Spring
-configuration in {\tt WEB-INF/spring/resources.xml} (see
-\url{http://gate.ac.uk/userguide/sec:api:spring} for details):
-
-\begin{lstlisting}
-<beans xmlns="http://www.springframework.org/schema/beans"
-    xmlns:gate="http://gate.ac.uk/ns/spring"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="
-      http://www.springframework.org/schema/beans
-      http://www.springframework.org/schema/beans/spring-beans.xsd
-      http://gate.ac.uk/ns/spring
-      http://gate.ac.uk/ns/spring.xsd">
-  <gate:extra-plugin>WEB-INF/custom-plugin</gate:extra-plugin>
-</beans>
-\end{lstlisting}
+saved application that will produce annotations of type Token in the default
+annotation set.  To bundle your tokeniser gapp inside the WAR file, put it
+under {\tt src/main/resources} and use a ``classpath:'' URL, i.e. if your
+saved application is {\tt src/main/resources/custom-tokeniser.xgapp} then set
+the {\tt queryTokeniserGapp} parameter to {\tt classpath:custom-tokeniser.xgapp}
 
 \subsection{Running}
 
 The easiest way to run the \Mimir\ cloud web app is to use the normal Grails
-commands \cmd{grails run-app} or \cmd{grails run-war}.  For performance,
-\cmd{grails prod run-war} is preferable.  For anything more than the smallest
-toy index it is advisable to increase the memory available to \Mimir\ by using
-the JAVA\_OPTS environment variable.  For example (using bash or a similar POSIX
-shell):
-\begin{verbatim}
-$ JAVA_OPTS='-Xmx4G' grails prod run-war
-\end{verbatim}
+commands \cmd{./grailsw run-app}.  However, for performance, it is preferable
+to create a WAR file using \cmd{./gradlew assemble} and run from that (using a
+tool such as \htlink{http://mvnrepository.com/artifact/com.github.jsimone/webapp-runner}{webapp-runner})
+For anything more than the smallest toy index it is advisable to increase the
+memory available to \Mimir\ by using the {\tt -Xmx} option to your
+webapp-runner command.
 
-To shut down a web app started using \cmd{grails run-app} or \cmd{grails
-run-war}, simply create an empty file in the {\tt mimir-cloud} directory named
-``{\tt .kill-run-app}''.  Grails watches for this file and will shut down
-gracefully when it detects that the file has been created.
-
-For production deployments, a better option is to build a WAR file using
-{\tt grails prod war} and deploy that to a standalone servlet container such as
-Apache Tomcat.  If you are using Ubuntu or Debian GNU/Linux, it is better to
-download the standard Tomcat ZIP package from Apache and use that rather than
-installing the Tomcat available through {\tt apt-get} as the latter is
-configured by default with a security manager that interferes with \Mimir.
+For production deployments, a better option is to deploy the WAR file
+to a standalone servlet container such as Apache Tomcat.  If you are using
+Ubuntu or Debian GNU/Linux, it is better to download the standard Tomcat ZIP
+package from Apache and use that rather than installing the Tomcat available
+through {\tt apt-get} as the latter is configured by default with a security
+manager that interferes with \Mimir.
 
 When deployed to a servlet container the web application reads configuration
-at run-time from two locations using the Grails standard ``externalised
-configuration'' mechanism:
-\begin{itemize}
-\item {\tt WEB-INF/classes/mimir-app-config.groovy} inside the web application.
-\item {\tt mimir-config.groovy} in the working directory of the Java process.
-\end{itemize}
+at runtime in the standard Grails way, looking for files named
+{\tt application.yml} or {\tt application.groovy} in the working directory
+of the servlet container's Java process.  Any options specified in these
+files override the defaults from the {\tt application.groovy} inside the WAR.
 
-As described above, any values in these files override values specified in
-{\tt MimirConfig.groovy} or the main application {\tt Config.groovy}.  For
-production deployments, you should be sure to specify the public URL of your
-\Mimir\ server in one of these configuration files.  For example:
-\begin{lstlisting}[texcl]
-gate.mimir.indexBaseDirectory = "/data/mimir/indexes"
-grails.serverURL = "http://example.com/mimir"
-// or just http://example.com if you have deployed \Mimir
-// as the ROOT web application
-\end{lstlisting}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Upgrading from earlier versions of \Mimir}\label{sec:admin:upgrade}
 
-Note the {\tt gate.mimir} prefix when overriding {\tt MimirConfig.groovy}
-settings.
+Where possible \Mimir\ tries to remain compatible with indexes and databases
+created by earlier versions of the software.  Where this is not possible (e.g.
+due to changes in the on-disk format between versions, or revisions of the
+underlying libraries that cause binary incompatibility), a facility is provided
+to ``upgrade'' existing indexes to the latest format.  If you attempt to use an
+old-format index in a new version of \Mimir\ the index will show in the web
+interface as ``failed'', but if you click the ``details'' button on the index
+information page you will see a link offering to upgrade the index to the
+latest version. The upgrade process is reasonably robust but {\bf it is very
+strongly recommended to back up all the index files on disk before attempting
+to upgrade}.
+
+Depending on the size of the index the upgrade process may take some time, when
+it completes the index will revert to the ``ready'' state and will then be
+available for searching or further indexing as normal.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Indexes in \Mimir}

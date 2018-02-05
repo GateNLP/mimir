@@ -1,5 +1,17 @@
 This appendix details the main changes in each \Mimir\ release.
 
+\section{Version 6.0 (February 2018)}
+\begin{itemize}
+\item Now depends on GATE Embedded 8.5.
+\item Build process completely revamped to build the core components and plugins
+  with Maven, and the web components with Gradle/Grails 3.3.
+\item New versions of many dependencies including MG4J and dsiutils.  Note that
+  this breaks compatibility with existing indexes from \Mimir\ versions before
+  6.0, they will need to be upgraded using the upgrade option on the index
+  management web page in order to be usable with \Mimir\ 6.0 (see
+  section~\ref{sec:admin:upgrade})
+\end{itemize}
+
 \section{Version 5.4 (February 2017)}
 \begin{itemize}
 \item Now depends on GATE Embedded 8.4.
