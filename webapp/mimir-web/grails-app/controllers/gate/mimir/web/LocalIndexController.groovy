@@ -16,11 +16,17 @@ import gate.mimir.web.Index;
 import gate.mimir.web.IndexTemplate;
 import gate.mimir.web.LocalIndex;
 
+import org.springframework.beans.factory.annotation.Autowired
+
 import java.util.UUID;
+import java.util.concurrent.Callable
 
 
 class LocalIndexController {
   
+  @Autowired
+  ScorerSource scorerSource
+
   /**
    * Service for interacting with local indexes.
    */
@@ -123,7 +129,8 @@ class LocalIndexController {
     }
     else {
       return [ localIndexInstance : localIndexInstance,
-        timeBetweenBatches : localIndexService.getIndex(localIndexInstance)?.timeBetweenBatches
+        timeBetweenBatches : localIndexService.getIndex(localIndexInstance)?.timeBetweenBatches,
+        availableScorers : scorerSource.scorerNames()
          ]
     }
   }
@@ -142,7 +149,9 @@ class LocalIndexController {
         if(localIndexInstance.version > version) {
           
           localIndexInstance.errors.rejectValue("version", "localIndex.optimistic.locking.failure", "Another user has updated this LocalIndex while you were editing.")
-          render(view:'edit',model:[localIndexInstance:localIndexInstance])
+          render(view:'edit',model:[localIndexInstance:localIndexInstance,
+              timeBetweenBatches : localIndexService.getIndex(localIndexInstance)?.timeBetweenBatches,
+              availableScorers:scorerSource.scorerNames()])
           return
         }
       }
@@ -156,7 +165,9 @@ class LocalIndexController {
           params:[indexId:localIndexInstance.indexId])
       }
       else {
-        render(view:'edit',model:[localIndexInstance:localIndexInstance])
+        render(view:'edit',model:[localIndexInstance:localIndexInstance,
+            timeBetweenBatches : localIndexService.getIndex(localIndexInstance)?.timeBetweenBatches,
+            availableScorers:scorerSource.scorerNames()])
       }
     }
     else {

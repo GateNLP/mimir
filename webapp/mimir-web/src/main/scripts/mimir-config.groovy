@@ -59,3 +59,10 @@ println "Writing standard Mímir URL mappings to grails-app/controllers/${mdl.pa
 render(template:template('MimirUrlMappings.groovy'),
        destination:file("grails-app/controllers/${mdl.packagePath}/MimirUrlMappings.groovy"),
        model:mdl)
+
+mdl = model(config.grails.codegen.defaultPackage + '.MimirScorerService')
+println "Writing standard Mímir scorer definitions to grails-app/services/${mdl.packagePath}/MimirScorerService.groovy"
+
+render(template:template('MimirScorerService.groovy'),
+       destination:file("grails-app/services/${mdl.packagePath}/MimirScorerService.groovy"),
+       model:mdl)

@@ -39,6 +39,8 @@ import gate.mimir.util.*
 
 import grails.transaction.Transactional
 
+import org.springframework.beans.factory.annotation.Autowired
+
 /**
  * Service for working with local indexes.
  */
@@ -46,6 +48,9 @@ import grails.transaction.Transactional
 class LocalIndexService {
   
   def grailsApplication 
+
+  @Autowired
+  ScorerSource scorerSource
 
   /**
    * This service is a singleton.
@@ -188,11 +193,11 @@ class LocalIndexService {
  
     // the scorer may have changed, so we update it every time
     if(index.scorer) {
-      engine.setScorerSource(grailsApplication.config.gate.mimir.scorers[index.scorer] as Callable<MimirScorer>)
+      engine.setScorerSource(scorerSource.scorerForName(index.scorer))
     } else {
       engine.setScorerSource(null)
     }
-    return mIndex    
+    return mIndex
   }
   
   public String[][] annotationsConfig(LocalIndex index) {
