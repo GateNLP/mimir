@@ -13,6 +13,9 @@ pipeline {
                 // build the Maven parts
                 sh 'mvn -e clean install'
                 // build the webapp
+                dir('webapp') {
+                    sh 'mimir-web/gradlew --console=plain clean'
+                }
                 dir('webapp/mimir-cloud') {
                     sh './gradlew --console=plain runCommand -Pargs=cache-mimir-plugins'
                     sh './gradlew --console=plain assemble'
