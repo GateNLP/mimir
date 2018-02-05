@@ -40,7 +40,8 @@ pipeline {
         }
         stage('Deploy') {
             when{
-                branch 'master'
+                //for some reason even though we were building the master branch this wasn't working
+                //branch 'master'
                 expression { currentBuild.result == "SUCCESS" }
             }
             steps {
