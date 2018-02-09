@@ -9,7 +9,7 @@ buildscript {
     }
 }
 
-version "6.0-SNAPSHOT"
+version "6.0-alpha1"
 group "uk.ac.gate.mimir"
 
 apply plugin:"eclipse"
@@ -54,9 +54,9 @@ dependencies {
     // we don't want log4j as Spring Boot uses SLF4J-over-log4j instead
     def exclLog4j = { exclude group:'log4j' }
 
-    compile("uk.ac.gate.mimir:mimir-core:6.0-SNAPSHOT", exclLog4j)
-    compile("uk.ac.gate.mimir:mimir-client:6.0-SNAPSHOT", exclLog4j)
-    compile("uk.ac.gate:gate-spring:8.5-SNAPSHOT", exclLog4j)
+    compile("uk.ac.gate.mimir:mimir-core:6.0-alpha1", exclLog4j)
+    compile("uk.ac.gate.mimir:mimir-client:6.0-alpha1", exclLog4j)
+    compile("uk.ac.gate:gate-spring:8.5-alpha1", exclLog4j)
 
     console "org.grails:grails-console"
     profile "org.grails.profiles:web-plugin"

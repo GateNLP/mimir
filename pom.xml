@@ -5,7 +5,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>uk.ac.gate.mimir</groupId>
   <artifactId>mimir-parent</artifactId>
-  <version>6.0-SNAPSHOT</version>
+  <version>6.0-alpha1</version>
   <packaging>pom</packaging>
   <url>http://gate.ac.uk/mimir</url>
 
@@ -37,6 +37,12 @@
       <distribution>repo</distribution>
     </license>
   </licenses>
+
+  <scm>
+    <connection>scm:git:git://github.com/GateNLP/mimir.git</connection>
+    <developerConnection>scm:git:git@github.com:GateNLP/mimir.git</developerConnection>
+    <url>https://github.com/GateNLP/mimir</url>
+  </scm>
 
   <mailingLists>
     <mailingList>
@@ -82,6 +88,12 @@
   </profiles>
 
   <distributionManagement>
+    <repository>
+      <id>gate-oss</id>
+      <name>Sonatype OSS staging</name>
+      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
+      <layout>default</layout>
+    </repository>
     <snapshotRepository>
       <id>gate.snapshots</id>
       <name>GATE Snapshots Repository</name>
