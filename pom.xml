@@ -68,12 +68,12 @@
     <module>plugins/measurements</module>
   </modules>
 
-  <!--
-  we put the test module in an active-by-default profile, so it can be easily
-  turned off when doing a deploy (as it only contains tests, there's no point
-  in deploying its empty JAR to the repository)
-  -->
   <profiles>
+    <!--
+    we put the test module in an active-by-default profile, so it can be easily
+    turned off when doing a deploy (as it only contains tests, there's no point
+    in deploying its empty JAR to the repository)
+    -->
     <profile>
       <id>with-tests</id>
       <activation>
@@ -84,6 +84,28 @@
       <modules>
         <module>mimir-test</module>
       </modules>
+    </profile>
+
+    <profile>
+      <id>gpg-sign</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>1.6</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
     </profile>
   </profiles>
 
