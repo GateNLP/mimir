@@ -58,7 +58,7 @@ class IndexAdminController {
         flash.message = "Index  \"${indexInstance.name}\" closing.  This may take a long time."
       }
     }
-    redirect(action:admin, params:params)    
+    redirect(action:'admin', params:params)    
   }
 
   /**
@@ -69,12 +69,12 @@ class IndexAdminController {
     
     if(!indexInstance) {
       flash.message = "Index not found with index id ${params.indexId}"
-      redirect(action:admin, params:params)
+      redirect(action:'admin', params:params)
     }
     else {
       indexInstance.sync()
       flash.message = "Sync to disk was requested."
-      redirect(action:admin, params:params)
+      redirect(action:'admin', params:params)
     }
   }
   
@@ -83,11 +83,11 @@ class IndexAdminController {
 
     if(!indexInstance) {
       flash.message = "Index not found with index id ${params.indexId}"
-      redirect(action:admin, params:params)
+      redirect(action:'admin', params:params)
     }
     else if(indexInstance.state != Index.READY) {
       flash.message = "Index \"${indexInstance.name}\" is not open"
-      redirect(action:admin, params:params)
+      redirect(action:'admin', params:params)
     }
     else {
       return [indexInstance:indexInstance, documents:new DeletedDocumentsCommand(documentIds:"")]
@@ -103,11 +103,11 @@ class IndexAdminController {
 
     if(!indexInstance) {
       flash.message = "Index not found with index id ${params.indexId}"
-      redirect(action:admin, params:params)
+      redirect(action:'admin', params:params)
     }
     else if(indexInstance.state != Index.READY) {
       flash.message = "Index \"${indexInstance.name}\" is not open"
-      redirect(action:admin, params:params)
+      redirect(action:'admin', params:params)
     }
     else {
       if(cmd.hasErrors()) {
@@ -124,7 +124,7 @@ class IndexAdminController {
           // if we get to here we have a list of Integers
           indexInstance."${cmd.operation}Documents"(idsToDelete)
           flash.message = "${idsToDelete.size()} document(s) marked as ${cmd.operation}d"
-          redirect(action:admin, params:[indexId:params.indexId])
+          redirect(action:'admin', params:[indexId:params.indexId])
         }
         catch(NumberFormatException e) {
           cmd.errors.rejectValue("documentIds",
