@@ -1,0 +1,27 @@
+Mímir: Multiparadigm Indexing and Retrieval
+
+Concept search, full-text search and annotation structure search in one
+scaleable index: "Mímir is a multi-paradigm information management index and
+repository which can be used to index and search over text, annotations,
+semantic schemas (ontologies), and semantic meta-data (instance data). It
+allows queries that arbitrarily mix full-text, structural, linguistic and
+semantic queries and that can scale to gigabytes of text. A typical semantic
+annotation project deals with large quantities of data of different kinds.
+Mímir provides a framework for implementing indexing and search functionality
+across all these data types."
+
+Some documentation:
+- %(doc/mimir-guide.pdf, a users and 
+  implementors guide)
+- %(http://services.gate.ac.uk/mimir/query-session-examples.pdf, an example
+  query session)
+- a few simple %(http://demos.gate.ac.uk/mimir/, demos)
+- %(http://vimeo.com/11334635, a short explanatory/demo video)
+
+You can spin up a ready-to-run virtual server with GATE Mímir installed on %(https://cloud.gate.ac.uk, GATE Cloud), and create indices using cloud processing time.
+
+GATE Mímir is open source software, released under the
+%(http://www.gnu.org/licenses/lgpl-3.0.html, GNU Lesser General Public
+Licence 3.0), with the source code hosted on GitHub.
+
+We offer a ready-built copy of the main ^mimir-cloud^ WAR file if you are happy with the default configuration and plugin set - release versions are available from %(https://github.com/GateNLP/mimir/releases, GitHub) and snapshots from %(https://jenkins.gate.ac.uk/job/Mimir/, our Jenkins continuous integration server).  Alternatively you can download the source code from %(https://github.com/GateNLP/mimir, the GitHub repository) and build it yourself.  The GATE plugin to send documents to an index is available from Maven Central and can be loaded into GATE 8.5 or later via the group ID ^uk.ac.gate.mimir^, artifact ID ^mimir-indexing-plugin^ and version ^6.0-SNAPSHOT^.
