@@ -13,7 +13,8 @@
             <g:if test="${message}">
             <div class="message">${message}</div>
             </g:if>
-            <g:form action="delete">
+            <g:form action="doDelete" id="${localIndexInstance.id}">
+            <g:hiddenField name="token" value="${token}" />
             <div class="dialog">
                 <table>
                     <tbody>

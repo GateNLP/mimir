@@ -85,14 +85,16 @@ class LocalIndexController {
   
   def delete() {
     def token = UUID.randomUUID().toString()
-    flash.token = token
+    session.indexDeleteToken = token
     [localIndexInstance:LocalIndex.get(params.id), token:token]
   }
 
   def doDelete() {
-    if(token == flash.token) {
+    def sessionToken = session.indexDeleteToken
+    session.removeAttribute('indexDeleteToken')
+    if(params.token == sessionToken) {
       LocalIndex localIndexInstance = LocalIndex.get(params.id)
-      localIndexService.deleteIndex(flow.localIndexInstance, flow.deleteFiles)
+      localIndexService.deleteIndex(localIndexInstance, params.deleteFiles)
       flash.message = "Local index ${localIndexInstance.id} deleted"
       redirect(controller:'mimirStaticPages', action:'admin')
     } else {
