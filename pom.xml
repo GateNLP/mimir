@@ -38,6 +38,12 @@
     </license>
   </licenses>
 
+  <scm>
+    <connection>scm:git:git://github.com/GateNLP/mimir.git</connection>
+    <developerConnection>scm:git:git@github.com:GateNLP/mimir.git</developerConnection>
+    <url>https://github.com/GateNLP/mimir</url>
+  </scm>
+
   <mailingLists>
     <mailingList>
       <name>GATE Users</name>
@@ -104,6 +110,12 @@
   </profiles>
 
   <distributionManagement>
+    <repository>
+      <id>gate-oss</id>
+      <name>Sonatype OSS staging</name>
+      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
+      <layout>default</layout>
+    </repository>
     <snapshotRepository>
       <id>gate.snapshots</id>
       <name>GATE Snapshots Repository</name>
