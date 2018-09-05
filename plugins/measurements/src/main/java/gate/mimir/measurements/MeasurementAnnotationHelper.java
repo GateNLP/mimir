@@ -66,13 +66,13 @@ public class MeasurementAnnotationHelper extends
 
   protected static final String DIMENSION_FEATURE = "dimension";
 
-  protected static final String NORM_UNIT_FEATURE = "normalisedUnit";
+  protected static final String NORM_UNIT_FEATURE = "normalizedUnit";
 
-  protected static final String NORM_VALUE_FEATURE = "normalisedValue";
+  protected static final String NORM_VALUE_FEATURE = "normalizedValue";
 
-  protected static final String NORM_MIN_VALUE_FEATURE = "normalisedMinValue";
+  protected static final String NORM_MIN_VALUE_FEATURE = "normalizedMinValue";
 
-  protected static final String NORM_MAX_VALUE_FEATURE = "normalisedMaxValue";
+  protected static final String NORM_MAX_VALUE_FEATURE = "normalizedMaxValue";
 
   protected static final String SPEC_FAKE_FEATURE = "spec";
   
