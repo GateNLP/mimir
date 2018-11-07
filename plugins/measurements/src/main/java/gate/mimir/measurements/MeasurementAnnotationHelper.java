@@ -14,6 +14,16 @@
  */
 package gate.mimir.measurements;
 
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+
 import gate.Gate;
 import gate.creole.Parameter;
 import gate.creole.ParameterException;
@@ -30,16 +40,6 @@ import gate.mimir.index.Mention;
 import gate.mimir.search.QueryEngine;
 import gate.mimir.util.DelegatingSemanticAnnotationHelper;
 import gate.util.GateRuntimeException;
-
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 /**
  * {@link SemanticAnnotationHelper} that supports querying of Measurement
@@ -88,6 +88,12 @@ public class MeasurementAnnotationHelper extends
   
   protected String encoding = null;
   
+  public static final String[] DEFAULT_NOMINAL_FEATURES = new String[]{
+      SPEC_FAKE_FEATURE, TYPE_FEATURE, DIMENSION_FEATURE, NORM_UNIT_FEATURE};
+
+  public static final String[] DEFAULT_FLOAT_FEATURES = new String[]{
+      NORM_VALUE_FEATURE, NORM_MIN_VALUE_FEATURE, NORM_MAX_VALUE_FEATURE};
+
   /**
    * The measurements parser used to parse the virtual "spec" feature.
    */
@@ -100,10 +106,8 @@ public class MeasurementAnnotationHelper extends
     setAnnotationType(ANNOTATION_TYPE);
     // our nominal features include "spec", those passed to the delegate
     // at init() time will not.
-    super.setNominalFeatures(new String[]{SPEC_FAKE_FEATURE, TYPE_FEATURE,
-      DIMENSION_FEATURE, NORM_UNIT_FEATURE});
-    super.setFloatFeatures(new String[]{NORM_VALUE_FEATURE,
-      NORM_MIN_VALUE_FEATURE, NORM_MAX_VALUE_FEATURE});
+    super.setNominalFeatures(DEFAULT_NOMINAL_FEATURES);
+    super.setFloatFeatures(DEFAULT_FLOAT_FEATURES);
   }
   
   public String getUnitsFile() {
@@ -146,41 +150,17 @@ public class MeasurementAnnotationHelper extends
     this.delegateHelperType = delegateHelperType;
   }
 
-  // override feature setters as Measurement helper does not support additional
-  // features
-
-  @Override
-  public void setNominalFeatures(String[] features) {
-    throw new UnsupportedOperationException("MeasurementAnnotationHelper uses "
-        + "a fixed feature set.");
-  }
-
-  @Override
-  public void setIntegerFeatures(String[] features) {
-    throw new UnsupportedOperationException("MeasurementAnnotationHelper uses "
-        + "a fixed feature set.");
-  }
-
-  @Override
-  public void setFloatFeatures(String[] features) {
-    throw new UnsupportedOperationException("MeasurementAnnotationHelper uses "
-        + "a fixed feature set.");
-  }
-
-  @Override
-  public void setTextFeatures(String[] features) {
-    throw new UnsupportedOperationException("MeasurementAnnotationHelper uses "
-        + "a fixed feature set.");
-  }
-
-  @Override
-  public void setUriFeatures(String[] features) {
-    throw new UnsupportedOperationException("MeasurementAnnotationHelper uses "
-        + "a fixed feature set.");
-  }
-
   @Override
   public void init(AtomicAnnotationIndex indexer) {
+    
+    Set<String> nominalFeatures = new LinkedHashSet<String>(Arrays.asList(getNominalFeatures()));
+    nominalFeatures.addAll(Arrays.asList(DEFAULT_NOMINAL_FEATURES));
+    setNominalFeatures(nominalFeatures.toArray(new String[nominalFeatures.size()]));
+    
+    Set<String> floatFeatures = new LinkedHashSet<String>(Arrays.asList(getFloatFeatures()));
+    floatFeatures.addAll(Arrays.asList(DEFAULT_FLOAT_FEATURES));
+    setFloatFeatures(floatFeatures.toArray(new String[floatFeatures.size()]));
+    
     // create the delegate - needs to happen before super.init
     if(getDelegate() == null) {
       if(delegateHelperType == null) { throw new IllegalArgumentException(
@@ -190,10 +170,15 @@ public class MeasurementAnnotationHelper extends
             delegateHelperType.newInstance();
           theDelegate.setAnnotationType(getAnnotationType());
           // nominal features for delegate do not include spec
-          theDelegate.setNominalFeatures(new String[]{TYPE_FEATURE,
-            DIMENSION_FEATURE, NORM_UNIT_FEATURE});
-          theDelegate.setFloatFeatures(new String[]{NORM_VALUE_FEATURE,
-            NORM_MIN_VALUE_FEATURE, NORM_MAX_VALUE_FEATURE});
+          
+          nominalFeatures.remove(SPEC_FAKE_FEATURE);
+          theDelegate.setNominalFeatures(
+            nominalFeatures.toArray(new String[nominalFeatures.size()]));
+
+          theDelegate.setFloatFeatures(getFloatFeatures());
+          theDelegate.setTextFeatures(getTextFeatures());
+          theDelegate.setIntegerFeatures(getIntegerFeatures());
+          theDelegate.setUriFeatures(getUriFeatures());
           
           setDelegate(theDelegate);
         } catch(Exception e) {
