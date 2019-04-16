@@ -89,11 +89,11 @@ public class TestQueries {
   public static void oneTimeSetUp() throws Exception {
     Gate.init();
     // load the tokeniser plugin
-    Gate.getCreoleRegister().registerPlugin(new Plugin.Maven("uk.ac.gate.plugins", "annie", "8.5-SNAPSHOT"));
+    Gate.getCreoleRegister().registerPlugin(new Plugin.Maven("uk.ac.gate.plugins", "annie", "8.6-SNAPSHOT"));
     // load the DB plugin
-    Gate.getCreoleRegister().registerPlugin(new Plugin.Maven("uk.ac.gate.mimir", "mimir-plugin-dbh2", "5.6-SNAPSHOT"));
+    Gate.getCreoleRegister().registerPlugin(new Plugin.Maven("uk.ac.gate.mimir", "mimir-plugin-dbh2", "6.1-SNAPSHOT"));
     // load the measurements plugin
-    Gate.getCreoleRegister().registerPlugin(new Plugin.Maven("uk.ac.gate.mimir", "mimir-plugin-measurements", "5.6-SNAPSHOT"));
+    Gate.getCreoleRegister().registerPlugin(new Plugin.Maven("uk.ac.gate.mimir", "mimir-plugin-measurements", "6.1-SNAPSHOT"));
     
     
     indexDirs = new File[helperTypes.length];

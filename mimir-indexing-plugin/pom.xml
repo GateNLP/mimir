@@ -8,7 +8,7 @@
 		<groupId>uk.ac.gate</groupId>
 		<artifactId>gate-plugin-base</artifactId>
 		<!-- this should be the version of GATE you wish to build against -->
-		<version>8.5-SNAPSHOT</version>
+		<version>8.5</version>
 
 		<!-- this forces the parent to always be resolved from the repo -->
 		<relativePath></relativePath>
@@ -17,7 +17,7 @@
 	<!-- this is the description of this plugin -->
 	<groupId>uk.ac.gate.mimir</groupId>
 	<artifactId>mimir-indexing-plugin</artifactId>
-	<version>6.0-SNAPSHOT</version>
+	<version>6.1-SNAPSHOT</version>
 
 	<name>Mímir indexer</name>
 	<description>Provides a PR to post documents to a Mímir index as part of a GATE pipeline</description>
@@ -38,7 +38,7 @@
 		<dependency>
 			<groupId>uk.ac.gate.mimir</groupId>
 			<artifactId>mimir-connector</artifactId>
-			<version>6.0-SNAPSHOT</version>
+			<version>6.1-SNAPSHOT</version>
 		</dependency>
 	</dependencies>
 
