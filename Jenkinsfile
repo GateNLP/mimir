@@ -24,7 +24,7 @@ pipeline {
         }
         stage('Document') {
             when{
-                expression { currentBuild.result != "FAILED" }
+                expression { currentBuild.currentResult != "FAILED" }
             }
             steps {
                 sh 'mvn -e site'
@@ -45,7 +45,7 @@ pipeline {
             when{
                 //for some reason even though we were building the master branch this wasn't working
                 //branch 'master'
-                expression { currentBuild.result == "SUCCESS" }
+                expression { currentBuild.currentResult == "SUCCESS" }
             }
             steps {
                 sh 'mvn -e -DskipTests source:jar javadoc:jar deploy'
