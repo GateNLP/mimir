@@ -3,9 +3,10 @@ package gate.mimir.web
 import gate.Gate
 import gate.creole.Plugin
 import gate.util.maven.SimpleMavenCache
+import grails.dev.commands.GrailsApplicationCommand
+import org.eclipse.aether.artifact.Artifact
 import org.eclipse.aether.artifact.DefaultArtifact
-
-import grails.dev.commands.*
+import org.eclipse.aether.util.artifact.SubArtifact
 
 class CacheMimirPluginsCommand implements GrailsApplicationCommand {
 
@@ -28,7 +29,16 @@ class CacheMimirPluginsCommand implements GrailsApplicationCommand {
         File cacheDir = new File(cacheURI)
         println "Cacheing plugins to ${cacheDir.absolutePath}"
         SimpleMavenCache cache = new SimpleMavenCache(cacheDir)
-        artifactsToCache.each { cache.cacheArtifact(it) }
+        artifactsToCache.each { Artifact a ->
+          cache.cacheArtifact(a)
+          // also cache the -creole.jar
+          try {
+            cache.cacheArtifact(new SubArtifact(a, "creole", "jar"))
+          } catch(Exception e) {
+            println "Failed to cache \"-creole.jar\" for plugin ${a.groupId}:${a.artifactId}:${a.version} - this is " +
+                    "not an error, but you should expect to see warning messages in your logs when Mimir starts up"
+          }
+        }
       } else {
         println "No plugins loaded, nothing to do"
       }
