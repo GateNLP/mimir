@@ -248,8 +248,8 @@ public class OrQuery implements QueryNode {
             System.arraycopy(subBindings, 0, containedBindings, 1, 
                     subBindings.length);
             aHit.setContainedBindings(null);
-            containedBindings[0] = aHit;
           }
+          containedBindings[0] = aHit;
         }        
         return new Binding(query, aHit.getDocumentId(), aHit.getTermPosition(),
                 aHit.getLength(), containedBindings); 
