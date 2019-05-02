@@ -4,6 +4,7 @@ grails{
    */
   plugin{
     springsecurity {
+      logout.postOnly = false
       userLookup.userDomainClassName = 'gate.mimir.security.User'
       userLookup.authorityJoinClassName = 'gate.mimir.security.UserRole'
       authority.className = 'gate.mimir.security.Role'
