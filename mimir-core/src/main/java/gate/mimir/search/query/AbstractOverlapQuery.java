@@ -197,12 +197,12 @@ public abstract class AbstractOverlapQuery implements QueryNode{
       if(!engine.isSubBindingsEnabled()) return main;
 
       Binding[] bindings;
-      int bindingsCount = 0;
+      int bindingsCount = 1;
 
       // count the number of sub bindings we need to copy from both the main and
       // filter binding instances
       if(main.getContainedBindings() != null)
-        bindingsCount = main.getContainedBindings().length;
+        bindingsCount += main.getContainedBindings().length;
       if(filter.getContainedBindings() != null)
         bindingsCount += filter.getContainedBindings().length;
 
@@ -220,6 +220,16 @@ public abstract class AbstractOverlapQuery implements QueryNode{
         System.arraycopy(filter.getContainedBindings(), 0, bindings,
             bindingsCount - filter.getContainedBindings().length,
             filter.getContainedBindings().length);
+      }
+
+      // now we've used the sub-bindings from the filter remove them
+      filter.setContainedBindings(null);
+
+      // we want to store the filter binding itself as well
+      if(main.getContainedBindings() != null) {
+        bindings[main.getContainedBindings().length] = filter;
+      } else {
+        bindings[0] = filter;
       }
 
       // set the contained bindings on the main query binding
