@@ -159,12 +159,12 @@ public abstract class AbstractOverlapQuery implements QueryNode{
             // inner.end smaller than outer.end
             switch(targetQuery){
               case INNER:
-                hitsOnCurrentDocument.add(innerHit);
+                hitsOnCurrentDocument.add(buildBinding(innerHit, outerHit));
                 //hit returned, cannot be used any more
                 innerIter.remove();
                 break;
               case OUTER:
-                hitsOnCurrentDocument.add(outerHit);
+                hitsOnCurrentDocument.add(buildBinding(outerHit,innerHit));
                 //hit returned, move to next one
                 continue outer;
             }
@@ -180,6 +180,53 @@ public abstract class AbstractOverlapQuery implements QueryNode{
           }
         }
       }
+    }
+    
+    /**
+     * Builds the Binding instance we will return, including populating the
+     * sub-bindings if enabled at the index level
+     *
+     * @param main
+     *          the main Binding that is the actual hit of the query
+     * @param filter
+     *          the Binding used to filter the query hits
+     * @return the main Binding with it's sub-bindings filled in as required
+     */
+    private Binding buildBinding(Binding main, Binding filter) {
+      // if we don't want sub-bindings then just return the main binding
+      if(!engine.isSubBindingsEnabled()) return main;
+
+      Binding[] bindings;
+      int bindingsCount = 0;
+
+      // count the number of sub bindings we need to copy from both the main and
+      // filter binding instances
+      if(main.getContainedBindings() != null)
+        bindingsCount = main.getContainedBindings().length;
+      if(filter.getContainedBindings() != null)
+        bindingsCount += filter.getContainedBindings().length;
+
+      // create the array to hold all the sub-bindings
+      bindings = new Binding[bindingsCount];
+
+      // copy in any sub-bindings from the main query binding
+      if(main.getContainedBindings() != null) {
+        System.arraycopy(main.getContainedBindings(), 0, bindings, 0,
+            main.getContainedBindings().length);
+      }
+
+      // copy in any sub-bindings from the filter query binding
+      if(filter.getContainedBindings() != null) {
+        System.arraycopy(filter.getContainedBindings(), 0, bindings,
+            bindingsCount - filter.getContainedBindings().length,
+            filter.getContainedBindings().length);
+      }
+
+      // set the contained bindings on the main query binding
+      main.setContainedBindings(bindings);
+
+      // return the binding
+      return main;
     }
 
     public <T> T accept( final DocumentIteratorVisitor<T> visitor ) throws IOException {
