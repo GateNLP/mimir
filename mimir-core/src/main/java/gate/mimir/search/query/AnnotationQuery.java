@@ -134,12 +134,12 @@ public class AnnotationQuery implements QueryNode {
       long doc = underlyingHit.getDocumentId();
       if(isInDocumentMode) {
         return new Binding(query, doc, 0, engine.getIndex().getDocumentSize(doc),
-          underlyingHit.getContainedBindings());        
+          null);
       } else {
         return new Binding(query, doc,
           underlyingHit.getTermPosition(),
           underlyingHit.getLength(),
-          underlyingHit.getContainedBindings());        
+          null);
       }
     }
    
