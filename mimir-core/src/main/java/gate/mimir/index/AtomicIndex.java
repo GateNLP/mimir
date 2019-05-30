@@ -493,10 +493,10 @@ public abstract class AtomicIndex implements Runnable {
           new ContiguousDocumentalStrategy(cutPoints),
           false, // flat = all component indexes have the same term list
           bloomFilters, // Bloom Filters
-          numberOfDocuments, 
-          numberOfTerms, 
-          numberOfPostings, 
-          numberOfOccurences, 
+          numberOfDocuments == -1 ? -1 : numberOfDocuments + 1, 
+          numberOfTerms == -1 ? -1 : numberOfTerms + 1, 
+          numberOfPostings == -1 ? -1 : numberOfPostings + 1, 
+          numberOfOccurences == -1 ? -1 : numberOfOccurences + 1, 
           maxCount, 
           null, // payload
           true, // hasCounts 
@@ -558,10 +558,10 @@ public abstract class AtomicIndex implements Runnable {
     return new LexicalCluster(indexes,
           new ContiguousLexicalStrategy(cutPoints, cutPointTerms),
           bloomFilters, // Bloom Filters
-          numberOfDocuments, 
-          numberOfTerms, 
-          numberOfPostings, 
-          numberOfOccurences, 
+          numberOfDocuments == -1 ? -1 : numberOfDocuments + 1, 
+          numberOfTerms == -1 ? -1 : numberOfTerms + 1, 
+          numberOfPostings == -1 ? -1 : numberOfPostings + 1, 
+          numberOfOccurences == -1 ? -1 : numberOfOccurences + 1, 
           maxCount, 
           null, // payload
           true, // hasCounts 
