@@ -521,9 +521,9 @@ public abstract class AtomicIndex implements Runnable {
     
     // prepare the lexical cluster
     Index[] indexes = new Index[batches.size()];
-    int[] cutPoints = new int[indexes.length];
+    int[] cutPoints = new int[indexes.length + 1];
     cutPoints[0] = 0;
-    String[] cutPointTerms = new String[indexes.length];
+    String[] cutPointTerms = new String[indexes.length + 1];
     cutPointTerms[0] = longToTerm(0);
     int numberOfTerms = -1;
     int numberOfDocuments = -1;
