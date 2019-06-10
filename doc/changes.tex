@@ -1,5 +1,16 @@
 This appendix details the main changes in each \Mimir\ release.
 
+\section{Version 6.1 (June 2019)}
+\begin{itemize}
+\item Now depends on GATE Embedded 8.6.
+\item Fixed a long-standing but previously-un-noticed bug whereby direct index
+  queries would sometimes ignore some documents from the end of the index.
+\item Improved support for sub-bindings in complex queries (to determine which
+  sub-elements of a compund query matched which spans of text).
+\item Measurements semantic annotation helper improved to allow additional
+  features besides those hard-coded ones required for measurement queries.
+\end{itemize}
+
 \section{Version 6.0 (May 2018)}
 \begin{itemize}
 \item Now depends on GATE Embedded 8.5.
