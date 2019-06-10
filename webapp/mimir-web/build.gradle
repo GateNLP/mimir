@@ -9,7 +9,7 @@ buildscript {
     }
 }
 
-version "6.1-SNAPSHOT"
+version "6.2-SNAPSHOT"
 group "uk.ac.gate.mimir"
 
 apply plugin:"eclipse"
@@ -57,9 +57,9 @@ dependencies {
       exclude group:'org.slf4j', module:'slf4j-log4j12'
     }
 
-    compile("uk.ac.gate.mimir:mimir-core:6.1-SNAPSHOT", exclLog4j)
-    compile("uk.ac.gate.mimir:mimir-client:6.1-SNAPSHOT", exclLog4j)
-    compile("uk.ac.gate:gate-spring:8.6-SNAPSHOT", exclLog4j)
+    compile("uk.ac.gate.mimir:mimir-core:6.2-SNAPSHOT", exclLog4j)
+    compile("uk.ac.gate.mimir:mimir-client:6.2-SNAPSHOT", exclLog4j)
+    compile("uk.ac.gate:gate-spring:8.6", exclLog4j)
 
     console "org.grails:grails-console"
     profile "org.grails.profiles:web-plugin"
