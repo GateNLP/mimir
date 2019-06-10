@@ -41,7 +41,7 @@ public class TestQueryParser {
     try {
       Gate.init();
       //Gate.getCreoleRegister().registerDirectories(new File(Gate.getPluginsHome(), "ANNIE").toURI().toURL());
-      Gate.getCreoleRegister().registerPlugin(new Plugin.Maven("uk.ac.gate.plugins", "annie", "8.6-SNAPSHOT"));
+      Gate.getCreoleRegister().registerPlugin(new Plugin.Maven("uk.ac.gate.plugins", "annie", "8.6"));
     } catch(Exception e) {
       fail("Gate initialization failed!");
     }

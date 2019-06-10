@@ -5,7 +5,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>uk.ac.gate.mimir</groupId>
   <artifactId>mimir-parent</artifactId>
-  <version>6.1-SNAPSHOT</version>
+  <version>6.1</version>
   <packaging>pom</packaging>
   <url>http://gate.ac.uk/mimir</url>
 
