@@ -40,6 +40,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
@@ -314,6 +315,36 @@ public class DBSemanticAnnotationHelper extends AbstractSemanticAnnotationHelper
   public boolean isIndexNulls() {
     return indexNulls;
   }
+
+  /**
+   * Additional parameters to pass in the H2 database URL, for example to
+   * disable the MVStore and use the older PageStore instead.
+   */
+  protected Map<String, Object> urlParams;
+
+  /**
+   * Supply additional parameters that will be appended to the JDBC URL when
+   * connecting to the H2 database.  This can include things like
+   * "mv_store=false" to disable the default MVStore storage engine in favour
+   * of the older PageStore.  See
+   * <a href="https://h2database.com/javadoc/org/h2/engine/DbSettings.html">the H2 documentation</a>
+   * for more details.
+   *
+   * @param urlParams parameters to pass in the H2 JDBC URL.
+   */
+  public void setUrlParams(Map<String, Object> urlParams) {
+    this.urlParams = urlParams;
+  }
+  
+  /**
+   * Additional parameters that will be passed to H2 as part of the JDBC
+   * connection URL.
+   *
+   * @return the URL parameters, or null if none.
+   */
+  public Map<String, Object> getUrlParams() {
+    return urlParams;
+  } 
   
   /**
    * Prepared statement used to obtain the Level-1 ID based on the values of 
@@ -432,9 +463,15 @@ public class DBSemanticAnnotationHelper extends AbstractSemanticAnnotationHelper
               DB_CACHE_SIZE_OPTIONS_KEY);
       // default to 100 MiB, if not provided
       if(cacheSizeStr == null) cacheSizeStr = Integer.toString(100 *1024);
-      dbConnection = DriverManager.getConnection(
-              "jdbc:h2:file:" + dbDir.getAbsolutePath() + 
-              "/" + tableBaseName + ";CACHE_SIZE=" + cacheSizeStr, "sa", "");
+      String jdbcUrl = "jdbc:h2:file:" + dbDir.getAbsolutePath() + 
+              "/" + tableBaseName + ";CACHE_SIZE=" + cacheSizeStr;
+      // add any extra URL parameters
+      if(urlParams != null) {
+        for(Map.Entry<String, Object> param : urlParams.entrySet()) {
+          jdbcUrl += ";" + param.getKey() + "=" + param.getValue();
+        }
+      }
+      dbConnection = DriverManager.getConnection(jdbcUrl, "sa", "");
       dbConnection.setAutoCommit(true);
       dbConnection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
       createDb(index);
