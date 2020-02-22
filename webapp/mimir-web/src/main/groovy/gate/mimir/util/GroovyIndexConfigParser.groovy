@@ -27,7 +27,7 @@ import groovy.time.TimeCategory
 public class GroovyIndexConfigParser {
   public static IndexConfig createIndexConfig(String groovyScript, File indexDir) {
     // evaluate the configuration script
-    def scriptBinding = new Binding([:])
+    def scriptBinding = new Binding([options:[:]])
     def shell = new GroovyShell(Gate.classLoader,
         scriptBinding)
     def tokenFeaturesHandler = new TokenFeaturesHandler()
@@ -81,6 +81,10 @@ public class GroovyIndexConfigParser {
 
     if(scriptBinding.hasVariable('maximumBatches')) {
       indexConfig.maximumBatches = scriptBinding.maximumBatches as int
+    }
+
+    if(scriptBinding.hasVariable('options') && scriptBinding.options instanceof Map) {
+      indexConfig.options.putAll(scriptBinding.options)
     }
 
     semanticAnnotationsHandler.clear()
