@@ -92,6 +92,34 @@ class LocalIndexService {
     def indexConfig = GroovyIndexConfigParser.createIndexConfig(
         templ.configuration, new File(index.indexDirectory))
     MimirIndex theIndex = new MimirIndex(indexConfig)
+
+    // write some extra metadata into the index directory describing the template that was used
+    File mimirWebMetadata = new File(index.indexDirectory, 'mimir-web-metadata')
+    mimirWebMetadata.mkdir()
+    if(mimirWebMetadata.canWrite()) {
+      new File(mimirWebMetadata, 'README').setText(
+        'This directory contains metadata about the mimir-web application that created\n' +
+        'the index.  These files are not part of the index itself.\n' +
+        '\n' +
+        '- original-template.groovy - the index template that was originally used to\n' +
+        '  create the index.  This is for reference only - the actual configuration\n' +
+        '  of the running index is ../config.xml, which may have been edited since\n' +
+        '  the index was created.\n' +
+        '\n' +
+        '- original-config.xml - the original config.xml derived from the template.\n' +
+        '  You can compare this with ../config.xml to determine if anything has been\n' +
+        '  changed since creation.\n', 'UTF-8')
+      new File(mimirWebMetadata, 'original-template.groovy').setText(
+        '//\n' +
+        '// This is the Groovy template that was used to create this index.  This file\n' +
+        '// is for reference only - the actual configuration of the running index is\n' +
+        '// stored as config.xml in the main index directory and may have been edited\n' +
+        '// since it was generated from this template.\n' +
+        '//\n' +
+        '\n' + templ.configuration, 'UTF-8')
+      IndexConfig.writeConfigToFile(indexConfig,
+          new File(mimirWebMetadata, 'original-config.xml'))
+    }
     // set up the query engine
     QueryEngine engine = theIndex.getQueryEngine()
     engine.queryTokeniser = queryTokeniser
