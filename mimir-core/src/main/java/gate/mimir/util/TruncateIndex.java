@@ -15,12 +15,14 @@
 package gate.mimir.util;
 
 import gate.Gate;
+import gate.creole.Plugin;
 import gate.mimir.IndexConfig;
 import gate.mimir.IndexConfig.SemanticIndexerConfig;
 import gate.mimir.IndexConfig.TokenIndexerConfig;
 import gate.mimir.MimirIndex;
 import gate.mimir.index.AtomicIndex;
 import gate.mimir.index.DocumentCollection;
+import gate.util.maven.Utils;
 import it.unimi.di.big.mg4j.index.CompressionFlags;
 import it.unimi.di.big.mg4j.index.CompressionFlags.Coding;
 import it.unimi.di.big.mg4j.index.CompressionFlags.Component;
@@ -58,6 +60,8 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -65,6 +69,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -163,9 +168,40 @@ public class TruncateIndex {
     Gate.runInSandbox(true);
     Gate.init();
     int i = 0;
-    while(i < args.length && "-p".equals(args[i])) {
-      Gate.getCreoleRegister().registerDirectories(new File(args[++i]).toURI().toURL());
-      i++;
+    Pattern mavenPluginPattern = Pattern.compile("([^/]+?):([^/]+?):([^/]+)");
+    while(i < args.length) {
+      if("-d".equals(args[i])) {
+        // Maven cache directory
+        Utils.addCacheDirectory(new File(args[++i]));
+        i++;
+      } else if("-p".equals(args[i])) {
+        // plugin - either URL or file path to a directory plugin, or group:artifact:version for a Maven one
+        String plugin = args[++i];
+        plugin = plugin.trim();
+        try {
+          Matcher m = mavenPluginPattern.matcher(plugin);
+          if(m.matches()) {
+            // this looks like a Maven plugin
+            Gate.getCreoleRegister().registerPlugin(new Plugin.Maven(m.group(1), m.group(2), m.group(3)));
+          } else {
+            try {
+              URL u = new URL(plugin);
+              // succeeded in parsing as a URL, load that
+              Gate.getCreoleRegister().registerPlugin(new Plugin.Directory(u));
+            } catch(MalformedURLException e) {
+              // not a URL, treat as a file
+              File pluginFile = new File(plugin);
+              Gate.getCreoleRegister().registerPlugin(new Plugin.Directory(pluginFile.toURI().toURL()));
+            }
+          }
+        } catch(Exception e) {
+          log.error("Failed to load plugin " + plugin, e);
+          System.exit(1);
+        }
+        i++;
+      } else {
+        break;
+      }
     }
     truncateIndex(new File(args[i]));
   }
