@@ -504,7 +504,7 @@ public class RemoteQueryRunner implements QueryRunner {
     if(firstRank != documentScores.size64()) {
       throw new IllegalStateException("Document IDs and scores out of sync.");
     }
-    long size = rank - firstRank;
+    long size = rank - firstRank + 1;
     if(size < docBlockSize) size = docBlockSize;
     
     long[] newDocIds;
