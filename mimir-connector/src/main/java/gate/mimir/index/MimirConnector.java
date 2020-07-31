@@ -174,8 +174,6 @@ public class MimirConnector {
    */
   protected synchronized void writeBuffer() throws IOException {
     if(docsSinceLastConnection > 0) {
-      // first phase - call the indexUrl action to find out where to post the
-      // data
       StringBuilder indexURLString = new StringBuilder(indexURL.toExternalForm());
       if(indexURLString.length() == 0) {
         throw new IllegalArgumentException("No index URL specified");
@@ -185,14 +183,15 @@ public class MimirConnector {
         indexURLString.append('/');
       }
       indexURLString.append("manage/indexUrl");
-      StringBuilder postUrlBuilder = new StringBuilder();
-      
-      webUtils.getText(postUrlBuilder, indexURLString.toString());
 
-      // second phase - post to the URL we were given
       // close the object OS so that it writes its coda
       objectOutputStream.close();
       try {
+        // first phase - call the indexUrl action to find out where to post the
+        // data
+        StringBuilder postUrlBuilder = new StringBuilder();
+        webUtils.getText(postUrlBuilder, indexURLString.toString());
+        // second phase - post to the URL we were given
         webUtils.postData(postUrlBuilder.toString(), byteBuffer);
       } finally {
         byteBuffer.reset();
