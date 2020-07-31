@@ -126,9 +126,6 @@ public class MimirConnector {
    * @param documentURI the URI that should be used to represent the document
    *         in the index.  May be null, in which case the index will assign a
    *         URI itself.
-   * @param indexURL the URL of the mimir index that is to receive the
-   *         document.  This would typically be of the form
-   *         <code>http://server:port/mimir/&lt;index UUID&gt;/</code>.
    * @throws IOException if any error has occurred communicating with the Mímir
    *         service.
    * @throws InterruptedException if the current thread is interrupted while
