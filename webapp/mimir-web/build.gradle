@@ -9,7 +9,7 @@ buildscript {
     }
 }
 
-version "6.2-SNAPSHOT"
+version "6.3-SNAPSHOT"
 group "uk.ac.gate.mimir"
 
 apply plugin:"eclipse"

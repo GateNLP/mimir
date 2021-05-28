@@ -17,7 +17,7 @@
 	<!-- this is the description of this plugin -->
 	<groupId>uk.ac.gate.mimir</groupId>
 	<artifactId>mimir-indexing-plugin</artifactId>
-	<version>6.2-SNAPSHOT</version>
+	<version>6.3-SNAPSHOT</version>
 
 	<name>Mímir indexer</name>
 	<description>Provides a PR to post documents to a Mímir index as part of a GATE pipeline</description>
