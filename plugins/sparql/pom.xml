@@ -17,7 +17,7 @@
 	<!-- this is the description of this plugin -->
 	<groupId>uk.ac.gate.mimir</groupId>
 	<artifactId>mimir-plugin-sparql</artifactId>
-	<version>6.2-SNAPSHOT</version>
+	<version>6.2</version>
 
 	<name>SPARQL Semantic Annotation Helper</name>
 	<description>SemanticAnnotationHelper that adds SPARQL querying to another helper.</description>
@@ -38,7 +38,7 @@
 		<dependency>
 			<groupId>uk.ac.gate.mimir</groupId>
 			<artifactId>mimir-core</artifactId>
-			<version>6.2-SNAPSHOT</version>
+			<version>6.2</version>
 			<scope>provided</scope>
 		</dependency>
 	</dependencies>

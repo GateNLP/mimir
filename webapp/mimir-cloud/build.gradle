@@ -10,7 +10,7 @@ buildscript {
     }
 }
 
-version "6.2-SNAPSHOT"
+version "6.2"
 group "uk.ac.gate"
 
 apply plugin:"eclipse"
