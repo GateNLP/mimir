@@ -37,7 +37,7 @@ import gate.mimir.search.query.parser.ParseException;
 import gate.mimir.search.score.MimirScorer
 import gate.mimir.util.*
 
-import grails.transaction.Transactional
+import grails.gorm.transactions.Transactional
 
 import org.springframework.beans.factory.annotation.Autowired
 

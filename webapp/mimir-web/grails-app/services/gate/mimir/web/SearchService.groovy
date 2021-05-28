@@ -31,7 +31,7 @@ import gate.mimir.search.QueryRunner
 import gate.mimir.search.query.QueryNode;
 import gate.mimir.search.query.parser.ParseException;
 
-import grails.transaction.Transactional
+import grails.gorm.transactions.Transactional
 
 @Transactional
 class SearchService {
