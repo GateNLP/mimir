@@ -51,15 +51,9 @@ dependencies {
     compile project(':mimir-web-ui')
     compile "com.google.gwt:gwt-servlet:2.6.0"
 
-    // we don't want log4j as Spring Boot uses SLF4J-over-log4j instead
-    def exclLog4j = {
-      exclude group:'log4j'
-      exclude group:'org.slf4j', module:'slf4j-log4j12'
-    }
-
-    compile("uk.ac.gate.mimir:mimir-core:6.2-SNAPSHOT", exclLog4j)
-    compile("uk.ac.gate.mimir:mimir-client:6.2-SNAPSHOT", exclLog4j)
-    compile("uk.ac.gate:gate-spring:8.6", exclLog4j)
+    compile("uk.ac.gate.mimir:mimir-core:6.2-SNAPSHOT")
+    compile("uk.ac.gate.mimir:mimir-client:6.2-SNAPSHOT")
+    compile("uk.ac.gate:gate-spring:9.0.1")
 
     console "org.grails:grails-console"
     profile "org.grails.profiles:web-plugin"

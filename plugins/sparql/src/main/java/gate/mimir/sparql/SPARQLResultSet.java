@@ -29,7 +29,8 @@ import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Class representing the result set from a SPARQL query.
@@ -48,7 +49,7 @@ public class SPARQLResultSet {
   
   private static final String XMLNS = "http://www.w3.org/2005/sparql-results#";
   
-  private static final Logger logger = Logger.getLogger(SPARQLResultSet.class);
+  private static final Logger logger = LoggerFactory.getLogger(SPARQLResultSet.class);
   
   
   private String[] variableNames;

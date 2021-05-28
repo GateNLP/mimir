@@ -36,14 +36,15 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * An {@link AtomicIndex} implementation for indexing tokens.
  */
 public class AtomicTokenIndex extends AtomicIndex {
   
-  private final static Logger logger = Logger.getLogger(AtomicTokenIndex.class);
+  private final static Logger logger = LoggerFactory.getLogger(AtomicTokenIndex.class);
   
   /**
    * A constant (empty String array) used for filtering terms from indexing.

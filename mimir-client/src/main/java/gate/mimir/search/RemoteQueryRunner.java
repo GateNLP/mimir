@@ -35,7 +35,8 @@ import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.FutureTask;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A {@link QueryRunner} implementation that proxies a QueryRunner running on
@@ -170,7 +171,7 @@ public class RemoteQueryRunner implements QueryRunner {
   /**
    * Shared Logger
    */
-  private static Logger logger = Logger.getLogger(RemoteQueryRunner.class);
+  private static Logger logger = LoggerFactory.getLogger(RemoteQueryRunner.class);
   
   
   /**

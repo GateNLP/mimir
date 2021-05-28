@@ -21,7 +21,8 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import gate.mimir.SemanticAnnotationHelper;
 import gate.mimir.index.AtomicIndex;
@@ -41,7 +42,7 @@ public class TermTypeTermsQuery implements TermsQuery {
    */
   private static final long serialVersionUID = 2339622263438077062L;
 
-  private static final Logger logger = Logger.getLogger(TermTypeTermsQuery.class);
+  private static final Logger logger = LoggerFactory.getLogger(TermTypeTermsQuery.class);
   
   /**
    * The term type for this query.  The type of a term is the name of a token 

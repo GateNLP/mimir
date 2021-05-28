@@ -41,7 +41,8 @@ import java.util.Set;
 import javax.xml.bind.DatatypeConverter;
 import javax.xml.stream.XMLStreamException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A Semantic annotation helper that, at query time, connects to a SPARQL
@@ -64,7 +65,7 @@ public class SPARQLSemanticAnnotationHelper extends
   private static final long serialVersionUID = 3855212427922484546L;
 
 
-  private static final Logger logger = Logger
+  private static final Logger logger = LoggerFactory
       .getLogger(SPARQLSemanticAnnotationHelper.class);
 
   

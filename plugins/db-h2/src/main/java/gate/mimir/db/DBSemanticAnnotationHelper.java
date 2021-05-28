@@ -44,7 +44,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A Semantic annotation helper that uses an embedded RDBMS for storing 
@@ -416,7 +417,7 @@ public class DBSemanticAnnotationHelper extends AbstractSemanticAnnotationHelper
   
   private static transient NumberFormat percentFormat = NumberFormat.getPercentInstance();
   
-  private static transient Logger logger = Logger.getLogger(DBSemanticAnnotationHelper.class);
+  private static transient Logger logger = LoggerFactory.getLogger(DBSemanticAnnotationHelper.class);
   
   /**
    * When in document mode (see

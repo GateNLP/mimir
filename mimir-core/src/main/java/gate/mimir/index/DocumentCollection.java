@@ -43,8 +43,8 @@ import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
-import org.apache.log4j.Logger;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -341,7 +341,7 @@ public class DocumentCollection {
   protected CollectionFileWriter collectionFileWriter;
   
   
-  private static Logger logger = Logger.getLogger(DocumentCollection.class);
+  private static Logger logger = LoggerFactory.getLogger(DocumentCollection.class);
   
   /**
    * The top level directory for the index.

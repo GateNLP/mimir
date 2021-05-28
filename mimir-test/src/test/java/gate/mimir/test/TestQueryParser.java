@@ -14,7 +14,8 @@ package gate.mimir.test;
 
 import static org.junit.Assert.fail;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -33,7 +34,7 @@ import java.io.File;
  */
 public class TestQueryParser {
   
-  private static final Logger logger = Logger.getLogger(TestQueryParser.class);
+  private static final Logger logger = LoggerFactory.getLogger(TestQueryParser.class);
 
   @BeforeClass
   public static void init() {

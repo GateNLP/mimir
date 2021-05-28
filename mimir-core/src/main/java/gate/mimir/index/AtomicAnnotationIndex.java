@@ -41,14 +41,15 @@ import it.unimi.di.big.mg4j.index.Index;
 import it.unimi.di.big.mg4j.index.NullTermProcessor;
 import it.unimi.dsi.lang.ObjectParser;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  */
 public class AtomicAnnotationIndex extends AtomicIndex {
   
-  private final static Logger logger = Logger.getLogger(AtomicAnnotationIndex.class);
+  private final static Logger logger = LoggerFactory.getLogger(AtomicAnnotationIndex.class);
   
   /**
    * A simple object of type {@link Annotation} that can be used as a special marker.

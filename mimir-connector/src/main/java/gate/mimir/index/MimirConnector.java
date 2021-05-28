@@ -25,7 +25,8 @@ import java.net.URL;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Utility class that implements the client side of the Mimir RPC indexing
@@ -33,7 +34,7 @@ import org.apache.log4j.Logger;
  */
 public class MimirConnector {
   
-  protected static Logger logger = Logger.getLogger(MimirConnector.class);
+  protected static Logger logger = LoggerFactory.getLogger(MimirConnector.class);
   
   /**
    * The maximum size of the {@link #byteBuffer}.

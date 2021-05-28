@@ -21,7 +21,8 @@ import it.unimi.dsi.fastutil.objects.ObjectHeapSemiIndirectPriorityQueue;
 import java.io.IOException;
 import java.util.*;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Query Node for AND queries. Finds the shortest document intervals that
@@ -52,7 +53,7 @@ public class AndQuery implements QueryNode {
     /**
      * Static logger.
      */
-    private static final Logger logger = Logger.getLogger(AndQueryExecutor.class);
+    private static final Logger logger = LoggerFactory.getLogger(AndQueryExecutor.class);
     
 
 

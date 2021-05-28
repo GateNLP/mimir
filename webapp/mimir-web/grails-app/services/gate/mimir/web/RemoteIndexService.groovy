@@ -16,11 +16,12 @@ package gate.mimir.web;
 
 import gate.mimir.util.WebUtilsManager;
 import gate.mimir.web.Index;
-import gate.mimir.web.RemoteIndex;
+import gate.mimir.web.RemoteIndex
 
 import java.util.Map;
 
-import org.apache.log4j.Logger
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory;
 
 class RemoteIndexService {
   
@@ -64,7 +65,7 @@ class RemoteIndexService {
  */
 class RemoteIndexProxy implements Runnable {
   
-  private static final Logger log = Logger.getLogger("grails.app.service.${RemoteIndexProxy.class.getName()}")
+  private static final Logger log = LoggerFactory.getLogger("grails.app.service.${RemoteIndexProxy.class.getName()}")
   private static final int DELAY = 10000
   def webUtilsManager
   

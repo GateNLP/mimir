@@ -16,7 +16,8 @@ import gate.Gate;
 import gate.mimir.SemanticAnnotationHelper
 import gate.mimir.IndexConfig.SemanticIndexerConfig
 
-import org.apache.log4j.Logger
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 /**
  * Class used as closure delegate to handle the
@@ -29,7 +30,7 @@ import org.apache.log4j.Logger
  */
 class SemanticAnnotationsHandler {
 
-  private static final Logger log = Logger.getLogger(SemanticAnnotationsHandler)
+  private static final Logger log = LoggerFactory.getLogger(SemanticAnnotationsHandler)
 
   List indexerConfigs = []
 

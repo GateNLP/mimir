@@ -30,7 +30,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A {@link QueryRunner} that presents a set of sub-indexes (represented by
@@ -38,7 +39,7 @@ import org.apache.log4j.Logger;
  */
 public class FederatedQueryRunner implements QueryRunner {
   
-  private static final Logger log = Logger.getLogger(FederatedQueryRunner.class);
+  private static final Logger log = LoggerFactory.getLogger(FederatedQueryRunner.class);
   
   /**
    * The total number of result documents (or -1 if not yet known).

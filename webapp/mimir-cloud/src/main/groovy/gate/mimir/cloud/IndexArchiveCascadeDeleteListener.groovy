@@ -10,9 +10,10 @@
 package gate.mimir.cloud
 
 import gate.mimir.web.LocalIndex
-import org.apache.log4j.Logger
+import org.slf4j.Logger
 import org.hibernate.event.spi.PreDeleteEvent
 import org.hibernate.event.spi.PreDeleteEventListener
+import org.slf4j.LoggerFactory
 
 /**
  * Hibernate event listener to delete the index archive (if any)
@@ -22,7 +23,7 @@ import org.hibernate.event.spi.PreDeleteEventListener
  * plugin) to add the hasMany.
  */
 public class IndexArchiveCascadeDeleteListener implements PreDeleteEventListener {
-  protected final Logger log = Logger.getLogger(this.getClass())
+  protected final Logger log = LoggerFactory.getLogger(this.getClass())
   
   // we want to inject the indexArchiveService but this introduces
   // a circular reference in the ApplicationContext.  So we inject
@@ -34,7 +35,7 @@ public class IndexArchiveCascadeDeleteListener implements PreDeleteEventListener
     // we only care about LocalIndexes
     if(e.entity instanceof LocalIndex) {
       def localIndex = e.entity
-      log.debug("LocalIndex ${localIndex.id} being deleted, deleting its archives")
+      log.debug("LocalIndex {} being deleted, deleting its archives", localIndex.id)
       // have to do the delete in a new session, but we will share the
       // containing database transaction, if any
       IndexArchive.withNewSession {

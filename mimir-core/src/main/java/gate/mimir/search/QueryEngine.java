@@ -41,7 +41,8 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class represents the entry point to the Mimir search API.
@@ -99,7 +100,7 @@ public class QueryEngine {
    */
   protected Callable<MimirScorer> scorerSource;
   
-  protected static final Logger logger = Logger.getLogger(QueryEngine.class);
+  protected static final Logger logger = LoggerFactory.getLogger(QueryEngine.class);
 
   /**
    * The tokeniser (technically any GATE LA) used to split the text segments

@@ -57,7 +57,8 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * <p>
@@ -156,7 +157,7 @@ public class MimirIndex {
    */
   protected long occurrencesPerBatch = DEFAULT_OCCURRENCES_PER_BATCH;
   
-  private static final Logger logger = Logger.getLogger(MimirIndex.class);
+  private static final Logger logger = LoggerFactory.getLogger(MimirIndex.class);
   
   /**
    * A {@link Runnable} used in a background thread to perform various index 

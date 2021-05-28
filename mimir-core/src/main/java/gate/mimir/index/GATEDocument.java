@@ -26,7 +26,8 @@ import java.io.*;
 import java.util.Arrays;
 import java.util.concurrent.BlockingQueue;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -49,7 +50,7 @@ public class GATEDocument implements Document {
   private static final Reader emptyReader = new StringReader("");
 
   
-  private static Logger logger = Logger.getLogger(GATEDocument.class);
+  private static Logger logger = LoggerFactory.getLogger(GATEDocument.class);
   
   /**
    * Used to generate unique document URIs, if no URIs are provided as document 

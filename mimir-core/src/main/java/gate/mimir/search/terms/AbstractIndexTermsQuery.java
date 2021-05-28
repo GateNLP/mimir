@@ -30,7 +30,8 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Base class for terms queries that use an MG4J direct index for their search.
@@ -42,7 +43,7 @@ public abstract class AbstractIndexTermsQuery extends
    */
   private static final long serialVersionUID = 8382919427152317859L;
 
-  private static final Logger logger = Logger
+  private static final Logger logger = LoggerFactory
     .getLogger(AbstractIndexTermsQuery.class);
 
   /**

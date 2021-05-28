@@ -23,7 +23,8 @@ import gate.creole.metadata.RunTime;
 import gate.mimir.tool.WebUtils;
 import gate.util.GateRuntimeException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.URL;
 
@@ -37,7 +38,7 @@ public class MimirIndexingPR extends AbstractLanguageAnalyser {
 
   private static final long serialVersionUID = 3291873032301133998L;
 
-  private static final Logger log = Logger.getLogger(MimirIndexingPR.class);
+  private static final Logger log = LoggerFactory.getLogger(MimirIndexingPR.class);
 
   private URL mimirIndexUrl;
   

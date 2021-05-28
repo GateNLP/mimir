@@ -80,7 +80,8 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.ByteArrayOutputStream;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Utility class to fix up a Mimir index that has been corrupted, e.g.
@@ -97,7 +98,7 @@ import org.apache.log4j.Logger;
  */
 public class TruncateIndex {
 
-  private static final Logger log = Logger.getLogger(TruncateIndex.class);
+  private static final Logger log = LoggerFactory.getLogger(TruncateIndex.class);
 
   /**
    * Comparator that orders mimir zip collection files by number (e.g.

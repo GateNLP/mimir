@@ -18,7 +18,8 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import gate.mimir.DocumentMetadataHelper;
 import gate.mimir.index.DocumentData;
@@ -43,7 +44,7 @@ public class DocumentFeaturesMetadataHelper implements DocumentMetadataHelper {
    */
   protected Map<String, String> featureNameToFieldName;
   
-  private static Logger logger = Logger.getLogger(
+  private static Logger logger = LoggerFactory.getLogger(
           DocumentFeaturesMetadataHelper.class);
   
   /**

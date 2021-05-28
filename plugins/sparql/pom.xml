@@ -8,7 +8,7 @@
 		<groupId>uk.ac.gate</groupId>
 		<artifactId>gate-plugin-base</artifactId>
 		<!-- this should be the version of GATE you wish to build against -->
-		<version>8.6</version>
+		<version>9.0.1</version>
 
 		<!-- this forces the parent to always be resolved from the repo -->
 		<relativePath></relativePath>

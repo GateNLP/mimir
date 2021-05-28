@@ -44,7 +44,8 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A QueryRunner implementation that can perform ranking.
@@ -251,7 +252,7 @@ public class RankingQueryRunnerImpl implements QueryRunner {
   /**
    * Shared logger instance.
    */
-  protected static Logger logger =  Logger.getLogger(RankingQueryRunnerImpl.class);
+  protected static Logger logger =  LoggerFactory.getLogger(RankingQueryRunnerImpl.class);
   
   /**
    * The {@link QueryExecutor} for the query being run.

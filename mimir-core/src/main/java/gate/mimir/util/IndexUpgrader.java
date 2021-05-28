@@ -39,7 +39,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Implementation of an algorithm to upgrade a 4.x or 5.0 M&iacute;mir
@@ -47,7 +48,7 @@ import org.apache.log4j.Logger;
  */
 public class IndexUpgrader {
   
-  protected static Logger logger = Logger.getLogger(IndexUpgrader.class);
+  protected static Logger logger = LoggerFactory.getLogger(IndexUpgrader.class);
   
   /**
    * A minimal set of files required for a valid index.

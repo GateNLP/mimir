@@ -1,0 +1,11 @@
+<configuration>
+    <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%t] %p %c{1}.%M\(%L\) | %m%n</pattern>
+        </encoder>
+    </appender>
+    <logger name="gate" level="INFO"/>
+    <root level="ERROR">
+        <appender-ref ref="stdout"/>
+    </root>
+</configuration>

@@ -91,9 +91,10 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.RunnableFuture;
 
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.google.common.io.PatternFilenameFilter;
+import org.slf4j.LoggerFactory;
 
 /**
  * <p>
@@ -642,7 +643,7 @@ public abstract class AtomicIndex implements Runnable {
    */
   private static final GATEDocument COMPACT_INDEX = new GATEDocument(){};
   
-  private static Logger logger = Logger.getLogger(AtomicIndex.class);
+  private static Logger logger = LoggerFactory.getLogger(AtomicIndex.class);
   
   protected static final PatternFilenameFilter TAILS_FILENAME_FILTER = 
       new PatternFilenameFilter("\\Q" + TAIL_FILE_NAME_PREFIX + "\\E\\d+");

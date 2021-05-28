@@ -26,11 +26,12 @@ import gate.mimir.search.terms.TermsQuery;
 import gate.mimir.search.terms.TermsResultSet;
 import gate.mimir.web.FederatedIndex
 import gate.mimir.web.Index
+import org.slf4j.LoggerFactory
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 /**
  * Service for operations on federated indexes.
@@ -284,7 +285,7 @@ class FederatedIndexProxy implements Runnable{
    * The hibernate ID of the index for which this proxy was created.
    */
   def id
-  private static final Logger log = Logger.getLogger("grails.app.service.${FederatedIndexProxy.class.getName()}")
+  private static final Logger log = LoggerFactory.getLogger("grails.app.service.${FederatedIndexProxy.class.getName()}")
   private static final int DELAY = 10000
   boolean stop = false
     

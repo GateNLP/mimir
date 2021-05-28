@@ -27,7 +27,8 @@ import it.unimi.di.big.mg4j.index.IndexReader;
 import java.io.IOException;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Given an {@link AnnotationQuery}, this finds the set of terms that satisfy 
@@ -68,7 +69,7 @@ public class AnnotationTermsQuery implements TermsQuery {
    */
   protected final boolean countsEnabled;
   
-  private static final Logger logger = Logger.getLogger(AnnotationTermsQuery.class);
+  private static final Logger logger = LoggerFactory.getLogger(AnnotationTermsQuery.class);
   
   /* (non-Javadoc)
    * @see gate.mimir.search.terms.TermQuery#execute()

@@ -32,7 +32,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -64,7 +65,7 @@ public class AnnotationQuery implements QueryNode {
     /**
      * Logger for this class.
      */
-    private static Logger logger = Logger.getLogger(AnnotationQueryExecutor.class);
+    private static Logger logger = LoggerFactory.getLogger(AnnotationQueryExecutor.class);
 
     /**
      * The underlying OrQuery executor that actually does the work.

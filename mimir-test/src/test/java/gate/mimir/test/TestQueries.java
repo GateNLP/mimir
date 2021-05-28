@@ -53,13 +53,14 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A class with tests for the various Mimir query operators.
@@ -69,7 +70,7 @@ public class TestQueries {
   private static final String resultsPath = "target/query-results";
   private static final String NEW_LINE = System.getProperty("line.separator");
 
-  private static Logger logger = Logger.getLogger(TestQueries.class.getName());
+  private static Logger logger = LoggerFactory.getLogger(TestQueries.class);
   
   
   public static final String[] helperTypes = System.getProperty(
@@ -533,14 +534,14 @@ public class TestQueries {
         String anotherLine = readers[i].readLine();
         if(line != null) {
           if(anotherLine == null || !line.equals(anotherLine)){
-            logger.warning("Assersion error: result sets not identical. " +
+            logger.warn("Assersion error: result sets not identical. " +
             		"First difference:\n Line (0):" + line + 
             		"\nLine (" + i + "):" + (anotherLine == null ? "null" : anotherLine));
             return false;
           }
         } else {
           if(anotherLine != null){
-            logger.warning("Assersion error: result sets not identical. " +
+            logger.warn("Assersion error: result sets not identical. " +
                     "First difference:\n Line (0): null" + line + 
                     "\nLine (" + i + "):" + anotherLine);               
             return false;

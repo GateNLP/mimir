@@ -32,14 +32,15 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Class providing utility methods for working with MG4J indexes. 
  */
 public class MG4JTools {
 
-  protected static final Logger logger = Logger.getLogger(MG4JTools.class);
+  protected static final Logger logger = LoggerFactory.getLogger(MG4JTools.class);
   
   /**
    * Given a index URI (a file URI denoting the index base name for all the 

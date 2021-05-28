@@ -25,8 +25,8 @@ import java.util.Map;
 import java.util.Arrays;
 import java.util.Map.Entry;
 
-import org.apache.log4j.Logger;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -248,7 +248,7 @@ public class ExecutorsList {
   
   private long executorsOpened;
   
-  protected static Logger logger = Logger.getLogger(ExecutorsList.class);
+  protected static Logger logger = LoggerFactory.getLogger(ExecutorsList.class);
   
   /**
    * The {@link QueryNode} used to create executors.
