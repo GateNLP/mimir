@@ -1,5 +1,27 @@
 This appendix details the main changes in each \Mimir\ release.
 
+\section{Version 6.2 (May 2021)}
+\begin{itemize}
+\item Now depends on GATE Embedded 9.0.1
+\item All logging has therefore been switched from Log4J to SLF4J -- if you are
+  using \texttt{mimir-core} or \texttt{mimir-connector} in your own code you
+  may need to add a dependency on a suitable logging frontend (e.g. logback)
+  and/or update your logging configuration.
+\item When creating an index from the web app, a copy of the Groovy index
+  template and the \emph{initial} \texttt{config.xml} is stored in the index
+  directory -- this is for reference only, the actual index configuration used
+  at runtime is still the one in the main \texttt{config.xml}, but this allows
+  you to see what template was originally used even if it is subsequently
+  edited in the web app, and to preserve the original XML configuration even if
+  the live one is edited by hand.
+\item Minor bug fixes in the indexing and searching client code.
+\end{itemize}
+
+\section{Version 6.1.1 (June 2020)}
+\begin{itemize}
+\item Now depends on GATE Embedded 8.6.1.
+\end{itemize}
+
 \section{Version 6.1 (June 2019)}
 \begin{itemize}
 \item Now depends on GATE Embedded 8.6.
