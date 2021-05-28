@@ -39,6 +39,7 @@ class CacheMimirPluginsCommand implements GrailsApplicationCommand {
                     "not an error, but you should expect to see warning messages in your logs when Mimir starts up"
           }
         }
+        cache.compact()
       } else {
         println "No plugins loaded, nothing to do"
       }
