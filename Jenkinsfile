@@ -4,7 +4,7 @@ pipeline {
     //    upstream(upstreamProjects: "gate-top", threshold: hudson.model.Result.SUCCESS)
     //}
     tools { 
-        maven 'Maven 3.3.9' 
+        maven 'Maven Current'
         jdk 'JDK1.8' 
     }
     stages {
