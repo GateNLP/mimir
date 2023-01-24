@@ -76,8 +76,8 @@ publishing {
     maven {
       url = "https://repo.gate.ac.uk/content/repositories/${project.version.endsWith('-SNAPSHOT') ? 'snapshots' : 'releases'}"
       credentials {
-        username project.hasProperty('gate.repo.username') ? project.property('gate.repo.username') : ''
-        password project.hasProperty('gate.repo.password') ? project.property('gate.repo.password') : ''
+        username(project.hasProperty('gate.repo.username') ? project.property('gate.repo.username') : System.getenv('GATE_REPO_USERNAME') ?: '')
+        password(project.hasProperty('gate.repo.password') ? project.property('gate.repo.password') : System.getenv('GATE_REPO_PASSWORD') ?: '')
       }
     }
   }
