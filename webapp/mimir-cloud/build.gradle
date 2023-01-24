@@ -17,6 +17,7 @@ apply plugin:"eclipse"
 apply plugin:"idea"
 apply plugin:"war"
 apply plugin:"org.grails.grails-web"
+apply plugin:"maven-publish"
 apply plugin:"asset-pipeline"
 apply plugin:"org.grails.grails-gsp"
 
@@ -84,4 +85,66 @@ assets {
     // don't bother minifying JS as most of it has been minified by GWT already
     minifyJs = false
     minifyCss = true
+}
+
+publishing {
+  publications {
+    mavenWeb(MavenPublication) {
+      from components.web
+
+      // this code is copied from what the grails-plugin-publish Gradle plugin
+      // does, we don't want to use that directly
+      pom.withXml {
+        Node pomNode = asNode()
+
+        if(pomNode.dependencyManagement) {
+          pomNode.dependencyManagement[0].replaceNode {}
+        }
+
+        pomNode.children().last() + {
+          delegate.name "Mímir web application"
+          delegate.description """\
+            Reference Mímir host application, bundling the Mímir web application
+            functionality from mimir-web with a simple authentication and authorization
+            layer using three hard-coded usernames.  This is the application that
+            is used for Mímir servers on cloud.gate.ac.uk
+            """
+          delegate.url "https://gate.ac.uk/mimir"
+
+          delegate.developers {
+            delegate.developer {
+              delegate.id "gate-team"
+              delegate.name "GATE Team"
+              delegate.email "gate-developers@lists.sourceforge.net"
+            }
+          }
+
+          delegate.licenses {
+            delegate.license {
+              delegate.name "GNU Lesser General Public License (LGPL), Version 3"
+              delegate.url "http://www.gnu.org/licenses/lgpl.html"
+              delegate.distribution "repo"
+            }
+          }
+        }
+
+        // remove dependencies that don't have a version
+        pomNode.dependencies.dependency.findAll {
+          it.version.text().isEmpty()
+        }.each {
+          it.replaceNode {}
+        }
+      }
+    }
+  }
+
+  repositories {
+    maven {
+      url = "https://repo.gate.ac.uk/content/repositories/${project.version.endsWith('-SNAPSHOT') ? 'snapshots' : 'releases'}"
+      credentials {
+        username(project.hasProperty('gate.repo.username') ? project.property('gate.repo.username') : System.getenv('GATE_REPO_USERNAME') ?: '')
+        password(project.hasProperty('gate.repo.password') ? project.property('gate.repo.password') : System.getenv('GATE_REPO_PASSWORD') ?: '')
+      }
+    }
+  }
 }
