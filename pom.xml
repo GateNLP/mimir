@@ -122,6 +122,10 @@
       <url>https://repo.gate.ac.uk/content/repositories/snapshots</url>
       <layout>default</layout>
     </snapshotRepository>
+    <site>
+      <id>mimir</id>
+      <url>https://gatenlp.github.io/mimir/</url>
+    </site>
   </distributionManagement>
 
   <build>
@@ -137,7 +141,30 @@
           <additionalparam>-Xdoclint:none</additionalparam>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-site-plugin</artifactId>
+        <version>3.8.2</version>
+      </plugin>
     </plugins>
   </build>
+
+  <reporting>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>3.1.1</version>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-project-info-reports-plugin</artifactId>
+        <version>3.0.0</version>
+        <configuration>
+          <dependencyLocationsEnabled>false</dependencyLocationsEnabled>
+        </configuration>
+      </plugin>
+    </plugins>
+  </reporting>
 
 </project>

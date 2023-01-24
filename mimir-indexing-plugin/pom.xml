@@ -42,4 +42,11 @@
 		</dependency>
 	</dependencies>
 
+	<distributionManagement>
+		<site>
+			<id>mimir-indexing-plugin</id>
+			<url>https://gatenlp.github.io/mimir/mimir-indexing-plugin/</url>
+		</site>
+	</distributionManagement>
+
 </project>

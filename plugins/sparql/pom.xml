@@ -43,4 +43,10 @@
 		</dependency>
 	</dependencies>
 
+	<distributionManagement>
+		<site>
+			<id>mimir-plugin-sparql</id>
+			<url>https://gatenlp.github.io/mimir/mimir-plugin-sparql/</url>
+		</site>
+	</distributionManagement>
 </project>

@@ -49,4 +49,10 @@
 		</dependency>
 	</dependencies>
 
+	<distributionManagement>
+		<site>
+			<id>mimir-plugin-dbh2</id>
+			<url>https://gatenlp.github.io/mimir/mimir-plugin-dbh2/</url>
+		</site>
+	</distributionManagement>
 </project>

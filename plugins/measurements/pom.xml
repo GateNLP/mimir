@@ -50,4 +50,10 @@
 		</dependency>
 	</dependencies>
 
+	<distributionManagement>
+		<site>
+			<id>mimir-plugin-measurements</id>
+			<url>https://gatenlp.github.io/mimir/mimir-plugin-measurements/</url>
+		</site>
+	</distributionManagement>
 </project>

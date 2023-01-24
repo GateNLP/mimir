@@ -118,7 +118,7 @@ jobs:
           ./gradlew --console=plain assemble
 
       - name: Build site
-        run: mvn --batch-mode -e -DskipTests site site:stage
+        run: mvn --batch-mode -e -DskipTests site site:stage -DtopSiteURL=https://gatenlp.github.io/mimir/
 
       - name: Upload artifact
         if: env.GITHUB_PAGES == 'true'
