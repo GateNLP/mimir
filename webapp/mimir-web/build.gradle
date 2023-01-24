@@ -21,8 +21,8 @@ apply plugin:"asset-pipeline"
 apply plugin:"org.grails.grails-gsp"
 
 repositories {
-    mavenCentral()
     mavenLocal()
+    mavenCentral()
     maven { url "https://repo.grails.org/grails/core" }
     maven { url "http://repo.gate.ac.uk/content/groups/public" }
 }
