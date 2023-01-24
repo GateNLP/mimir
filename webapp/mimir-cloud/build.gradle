@@ -11,7 +11,7 @@ buildscript {
 }
 
 version "6.3-SNAPSHOT"
-group "uk.ac.gate"
+group "uk.ac.gate.mimir"
 
 apply plugin:"eclipse"
 apply plugin:"idea"
